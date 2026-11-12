@@ -63,7 +63,7 @@ function allMedia() {
 
 function albums() {
   return `<section class="page-heading"><div><span class="eyebrow">CURATED BY YOU</span><h1>Albums</h1><p>Small collections for the moments you return to.</p></div><button class="outline-action" data-create>${icon('plus', 17)} New sample album</button></section>
-    <div class="album-grid">${state.albums.map((name, i) => { const items = media.filter(item => item.album === name); const cover = items[0] || media[i % media.length]; return `<button class="album-card" data-album="${escapeHtml(name)}"><span class="album-cover"><img src="${photo(cover)}" alt="" loading="lazy" /></span><span class="album-title">${escapeHtml(name)} ${icon('arrow', 18)}</span><span class="album-meta">${items.length} sample ${items.length === 1 ? 'item' : 'items'}</span></button>`; }).join('')}</div>`;
+    <div class="album-grid">${state.albums.map(name => { const items = media.filter(item => item.album === name); const cover = items[0]; return `<button class="album-card" data-album="${escapeHtml(name)}"><span class="album-cover ${cover ? '' : 'album-cover-empty'}">${cover ? `<img src="${photo(cover)}" alt="" loading="lazy" />` : `${icon('album', 30)}<span>Empty sample album</span>`}</span><span class="album-title">${escapeHtml(name)} ${icon('arrow', 18)}</span><span class="album-meta">${items.length} sample ${items.length === 1 ? 'item' : 'items'}</span></button>`; }).join('')}</div>`;
 }
 
 function searchPage() {
