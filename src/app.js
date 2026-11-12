@@ -22,7 +22,7 @@ const icon = (name, size = 20) => {
 };
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query, state.type) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
-function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); } }
+function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; const favoriteFocused = document.activeElement?.dataset.favorite !== undefined; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); else if (favoriteFocused) document.querySelector('[data-favorite]')?.focus(); } }
 function closeViewer() { const id = state.selected; state.selected = null; render(); const card = document.querySelector(`[data-open="${id}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
 
 function navButton(page, label, symbol) {
@@ -38,7 +38,11 @@ function mediaCard(item, extra = '') {
 }
 
 function grid(items) {
-  if (!items.length) return state.album && !state.query ? `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>This sample album is empty</h2><p>Album editing and adding media are part of a later phase. Explore the other sample collections for now.</p><button class="text-action" data-page="albums">Browse albums ${icon('arrow', 17)}</button></div>` : `<div class="empty"><span class="empty-icon">${icon('search', 26)}</span><h2>No sample matches</h2><p>Try a place, date, or a simpler description. This prototype searches fixture labels only.</p><button class="text-action" data-clear>Clear search ${icon('arrow', 17)}</button></div>`;
+  if (!items.length) {
+    if (state.album && !state.query && state.type !== 'all' && findMedia('', 'all', state.album).length) return `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>No sample ${state.type === 'video' ? 'videos' : 'photos'} in this album</h2><p>Other media may still be here.</p><button class="text-action" data-type="all">Show all types ${icon('arrow', 17)}</button></div>`;
+    if (state.album && !state.query) return `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>This sample album is empty</h2><p>Album editing and adding media are part of a later phase. Explore the other sample collections for now.</p><button class="text-action" data-page="albums">Browse albums ${icon('arrow', 17)}</button></div>`;
+    return `<div class="empty"><span class="empty-icon">${icon('search', 26)}</span><h2>No sample matches</h2><p>Try a place, date, or a simpler description. This prototype searches fixture labels only.</p><button class="text-action" data-clear>Clear search ${icon('arrow', 17)}</button></div>`;
+  }
   return `<div class="media-grid">${items.map(item => mediaCard(item)).join('')}</div>`;
 }
 
@@ -108,7 +112,7 @@ app.addEventListener('click', event => {
   else if (target.dataset.clear !== undefined) { state.query = ''; state.type = 'all'; render(); }
   else if (target.dataset.offline !== undefined) { state.offline = !state.offline; render(); }
   else if (target.dataset.index !== undefined) { state.index = state.index === 'partial' ? 'complete' : 'partial'; render(); }
-  else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (session only)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); } }
+  else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (resets on reload)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); } }
 });
 
 app.addEventListener('input', event => {
