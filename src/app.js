@@ -21,6 +21,9 @@ const icon = (name, size = 20) => {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 };
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query, state.type) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
+function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); } }
+function closeViewer() { const id = state.selected; state.selected = null; render(); const card = document.querySelector(`[data-open="${id}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
 
 function navButton(page, label, symbol) {
   return `<button class="nav-item ${state.page === page ? 'active' : ''}" data-page="${page}" ${state.page === page ? 'aria-current="page"' : ''}>${icon(symbol)}<span>${label}</span></button>`;
@@ -35,7 +38,7 @@ function mediaCard(item, extra = '') {
 }
 
 function grid(items) {
-  if (!items.length) return `<div class="empty"><span class="empty-icon">${icon('search', 26)}</span><h2>No sample matches</h2><p>Try a place, date, or a simpler description. This prototype searches fixture labels only.</p><button class="text-action" data-clear>Clear search ${icon('arrow', 17)}</button></div>`;
+  if (!items.length) return state.album && !state.query ? `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>This sample album is empty</h2><p>Album editing and adding media are part of a later phase. Explore the other sample collections for now.</p><button class="text-action" data-page="albums">Browse albums ${icon('arrow', 17)}</button></div>` : `<div class="empty"><span class="empty-icon">${icon('search', 26)}</span><h2>No sample matches</h2><p>Try a place, date, or a simpler description. This prototype searches fixture labels only.</p><button class="text-action" data-clear>Clear search ${icon('arrow', 17)}</button></div>`;
   return `<div class="media-grid">${items.map(item => mediaCard(item)).join('')}</div>`;
 }
 
@@ -50,7 +53,7 @@ function home() {
 function allMedia() {
   const items = findMedia(state.query, state.type, state.album);
   return `<section class="page-heading"><div><span class="eyebrow">EVERYTHING IN ONE PLACE</span><h1>${state.album ? escapeHtml(state.album) : 'All media'}</h1><p>${items.length} sample ${items.length === 1 ? 'item' : 'items'} · Fixture labels only</p></div>${state.album ? '<button class="outline-action" data-page="albums">All albums</button>' : ''}</section>
-    <div class="filter-row" aria-label="Media type filters"><button class="filter ${state.type === 'all' ? 'selected' : ''}" data-type="all">All</button><button class="filter ${state.type === 'photo' ? 'selected' : ''}" data-type="photo">Photos</button><button class="filter ${state.type === 'video' ? 'selected' : ''}" data-type="video">Videos</button></div>
+    <div class="filter-row" role="group" aria-label="Media type filters"><button class="filter ${state.type === 'all' ? 'selected' : ''}" aria-pressed="${state.type === 'all'}" data-type="all">All</button><button class="filter ${state.type === 'photo' ? 'selected' : ''}" aria-pressed="${state.type === 'photo'}" data-type="photo">Photos</button><button class="filter ${state.type === 'video' ? 'selected' : ''}" aria-pressed="${state.type === 'video'}" data-type="video">Videos</button></div>
     ${grid(items)}`;
 }
 
@@ -73,21 +76,22 @@ function searchResults() {
 
 function favorites() {
   const items = media.filter(item => state.favorites.has(item.id));
-  return `<section class="page-heading"><div><span class="eyebrow">KEEP CLOSE</span><h1>Favorites</h1><p>Sample changes last only for this browser session.</p></div></section>${items.length ? grid(items) : `<div class="empty"><span class="empty-icon">${icon('heart', 26)}</span><h2>Nothing saved yet</h2><p>Open a sample moment and choose Favorite to keep it here during this session.</p><button class="text-action" data-page="all">Browse all media ${icon('arrow', 17)}</button></div>`}`;
+  return `<section class="page-heading"><div><span class="eyebrow">KEEP CLOSE</span><h1>Favorites</h1><p>Sample changes reset when the page reloads.</p></div></section>${items.length ? grid(items) : `<div class="empty"><span class="empty-icon">${icon('heart', 26)}</span><h2>Nothing saved yet</h2><p>Open a sample moment and choose Favorite. Your choice resets on reload.</p><button class="text-action" data-page="all">Browse all media ${icon('arrow', 17)}</button></div>`}`;
 }
 
 function viewer() {
   const item = media.find(x => x.id === state.selected);
   if (!item) return '';
-  const idx = media.indexOf(item);
-  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer"><div class="viewer-top"><button class="icon-button" data-close aria-label="Close viewer">${icon('close', 23)}</button><span>Sample media · ${idx + 1} of ${media.length}</span><button class="viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 19)} ${state.favorites.has(item.id) ? 'Favorited' : 'Favorite'}</button></div><div class="viewer-body"><button class="viewer-arrow previous" data-step="-1" aria-label="Previous item">${icon('chevron', 26)}</button><img src="${photo(item, 1800)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /><button class="viewer-arrow" data-step="1" aria-label="Next item">${icon('chevron', 26)}</button></div><div class="viewer-bottom"><div><span class="eyebrow">${escapeHtml(item.type.toUpperCase())} · SAMPLE</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.place)} · ${formatDate(item.date)}</p></div><span class="availability">${item.type === 'video' ? 'Sample poster · video playback not connected' : state.offline ? 'Sample original unavailable · server offline' : 'Sample preview · original not connected'}</span></div></div>`;
+  const items = viewerItems(); const idx = items.findIndex(x => x.id === item.id);
+  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer"><div class="viewer-top"><button class="icon-button" data-close aria-label="Close viewer">${icon('close', 23)}</button><span>Sample media · ${idx + 1} of ${items.length}</span><button class="viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 19)} ${state.favorites.has(item.id) ? 'Favorited' : 'Favorite'}</button></div><div class="viewer-body"><button class="viewer-arrow previous" data-step="-1" aria-label="Previous item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button><img src="${photo(item, 1800)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /><button class="viewer-arrow" data-step="1" aria-label="Next item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button></div><div class="viewer-bottom"><div><span class="eyebrow">${escapeHtml(item.type.toUpperCase())} · SAMPLE</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.place)} · ${formatDate(item.date)}</p></div><span class="availability">${item.type === 'video' ? 'Sample poster · video playback not connected' : state.offline ? 'Sample original unavailable · server offline' : 'Sample preview · original not connected'}</span></div></div>`;
 }
 
 function render() {
+  document.body.classList.toggle('viewer-open', Boolean(state.selected));
   app.innerHTML = `<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark">N<span>✳</span></span><span>NEXO <small>GALLERY</small></span></div><div class="nav-group"><span class="nav-label">LIBRARY</span>${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</div><div class="sidebar-bottom"><div class="sidebar-caption">A quieter way to remember.</div><div class="sample-indicator"><span></span> Prototype · sample media</div></div></aside>
     <div class="main-column"><header class="topbar"><button class="mobile-brand" data-page="home" aria-label="Nexo Gallery home">N<span>✳</span></button><button class="top-search" data-page="search">${icon('search', 19)} <span>Search your gallery</span><kbd>⌘ K</kbd></button><div class="top-actions"><button class="availability-control" data-offline aria-pressed="${state.offline}" title="Toggle simulated home server state"><span class="status-dot ${state.offline ? 'offline' : ''}"></span>${state.offline ? 'Simulated offline' : 'Simulated online'}</button><span class="avatar" aria-label="Personal space">A</span></div></header><main id="main">${state.page === 'home' ? home() : state.page === 'all' ? allMedia() : state.page === 'albums' ? albums() : state.page === 'favorites' ? favorites() : searchPage()}</main><footer class="footer">NEXO GALLERY <span>Prototype · all content and status are sample data</span></footer></div>
-    <nav class="mobile-nav" aria-label="Main navigation">${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('search', 'Search', 'search')}${navButton('albums', 'Albums', 'album')}</nav></div>${state.selected ? viewer() : ''}`;
-  if (state.selected) document.querySelector('[data-close]')?.focus();
+    <nav class="mobile-nav" aria-label="Main navigation">${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('search', 'Search', 'search')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</nav></div>${state.selected ? viewer() : ''}`;
+  if (state.selected) { document.querySelector('.layout').inert = true; document.querySelector('[data-close]')?.focus(); }
 }
 
 app.addEventListener('click', event => {
@@ -95,9 +99,9 @@ app.addEventListener('click', event => {
   if (!target) return;
   if (target.dataset.page) { state.page = target.dataset.page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null; render(); window.scrollTo(0, 0); if (state.page === 'search') document.querySelector('#main-search')?.focus(); }
   else if (target.dataset.open) { state.selected = target.dataset.open; render(); }
-  else if (target.dataset.close !== undefined) { state.selected = null; render(); }
-  else if (target.dataset.step) { const i = media.findIndex(item => item.id === state.selected); state.selected = media[(i + Number(target.dataset.step) + media.length) % media.length].id; render(); }
-  else if (target.dataset.favorite) { state.favorites.has(target.dataset.favorite) ? state.favorites.delete(target.dataset.favorite) : state.favorites.add(target.dataset.favorite); render(); }
+  else if (target.dataset.close !== undefined) { closeViewer(); }
+  else if (target.dataset.step) { moveViewer(Number(target.dataset.step)); }
+  else if (target.dataset.favorite) { const wasFavorite = state.favorites.has(target.dataset.favorite); wasFavorite ? state.favorites.delete(target.dataset.favorite) : state.favorites.add(target.dataset.favorite); if (state.page === 'favorites' && wasFavorite) closeViewer(); else { render(); document.querySelector('[data-favorite]')?.focus(); } }
   else if (target.dataset.type) { state.type = target.dataset.type; render(); }
   else if (target.dataset.album) { state.album = target.dataset.album; state.page = 'all'; render(); }
   else if (target.dataset.suggest) { state.query = target.dataset.suggest; render(); document.querySelector('#main-search')?.focus(); }
@@ -114,10 +118,11 @@ app.addEventListener('input', event => {
 });
 
 document.addEventListener('keydown', event => {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); state.page = 'search'; render(); document.querySelector('#main-search')?.focus(); }
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); state.page = 'search'; render(); document.querySelector('#main-search')?.focus(); }
   if (!state.selected) return;
-  if (event.key === 'Escape') { state.selected = null; render(); }
-  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { const i = media.findIndex(item => item.id === state.selected); state.selected = media[(i + (event.key === 'ArrowRight' ? 1 : -1) + media.length) % media.length].id; render(); }
+  if (event.key === 'Escape') { closeViewer(); }
+  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') moveViewer(event.key === 'ArrowRight' ? 1 : -1);
+  if (event.key === 'Tab') { const controls = [...document.querySelectorAll('#viewer button:not(:disabled)')]; const first = controls[0], last = controls.at(-1); if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }
 });
 
 render();
