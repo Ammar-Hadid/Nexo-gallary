@@ -2,15 +2,19 @@
 Description=Nexo Gallery isolated home object store
 After=docker.service network-online.target
 Requires=docker.service
+RequiresMountsFor=/srv/nexo-gallery/objects
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 EnvironmentFile=/etc/nexo-gallery/storage.env
+ExecStartPre=/usr/bin/python3 /usr/local/libexec/nexo-gallery/verify_storage.py
 ExecStartPre=/usr/bin/docker compose -f /etc/nexo-gallery/compose.storage.yaml config --quiet
 ExecStart=/usr/bin/docker compose -f /etc/nexo-gallery/compose.storage.yaml up -d --no-build
+ExecStartPost=/usr/bin/python3 /usr/local/libexec/nexo-gallery/check_storage_ready.py
 ExecStop=/usr/bin/docker compose -f /etc/nexo-gallery/compose.storage.yaml stop --timeout 120
+ExecStopPost=/usr/bin/docker compose -f /etc/nexo-gallery/compose.storage.yaml stop --timeout 120
 TimeoutStartSec=3min
 TimeoutStopSec=150s
 

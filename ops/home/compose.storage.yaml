@@ -18,7 +18,7 @@ services:
           create_host_path: false
     networks:
       - storage
-    restart: unless-stopped
+    restart: "no" # systemd starts it only after mount identity verification
     stop_grace_period: 2m
     mem_limit: 3g
     cpus: "2.0"
