@@ -13,9 +13,9 @@ Updated 13 November 2026. This is an evidence ledger, not a claim that the galle
 
 - Secure vertical slice: Ente Museum, database and S3 store were not run because Docker socket access is denied here. No encrypted import/download/recovery or Nexo album mutation has been demonstrated.
 - VPS: current capacity, ingress and isolated deployment cannot be inspected until SSH transport works.
-- Home: wait for the user-provided Shuttle alias. No attempt has been made to find or access it.
+- Home: the user supplied an SSH target on 13 November. A read-only SSH attempt failed before authentication with `Operation not permitted` from this execution sandbox. The machine has not been inspected or changed; its power, storage and backup behavior remain unverified. The supplied password was not used or stored in the repository.
 - Backups: independent offsite storage, consistent database and object snapshots, separate recovery material and a tested clean restore are absent. Keep all Apple/Samsung originals.
 - Distribution: branded iPhone app signing and the Apple Developer Program decision are pending; the fixture shell is not a substitute.
 - Costs: electricity, offsite hardware/location, domain/tunnel and existing VPS bill are unknown. The $2–3/month incremental target is unproven.
 
-Next dependency: enable a permitted browser-rendering path to inspect the phase-2 shell at phone/tablet/desktop sizes; separately enable local container testing or provide suitable isolated runtime access for the Ente secure slice. Neither requires the Shuttle alias, and neither is claimed done.
+Phase 7 contract preparation is recorded in `docs/07-nexo-integration.md`. It defines only the trusted-device boundary and acceptance checks; there is no working assistant API. Next dependencies are a permitted browser-rendering path for the shell, container access for the Ente secure slice, and SSH transport for read-only inspection of both servers.
