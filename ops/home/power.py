@@ -56,6 +56,20 @@ def idle_ready(now: datetime, path: Path = IDLE, lease_id: str | None = None) ->
 
 
 def request_drain(now: datetime, path: Path = REQUEST) -> str:
+    try:
+        existing = json.loads(path.read_text())
+    except FileNotFoundError:
+        existing = None
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"Unreadable drain lease; manual inspection required: {error}") from error
+    if existing is not None:
+        try:
+            expired = type(existing["expires_at"]) is int and existing["expires_at"] <= int(now.timestamp())
+        except (TypeError, KeyError):
+            expired = False
+        if not expired:
+            raise SystemExit("An active or malformed drain lease exists; shutdown aborted")
+        path.unlink()  # Expired leases have already required the producer to resume.
     lease_id = uuid.uuid4().hex
     payload = json.dumps({"lease_id": lease_id, "expires_at": int(now.timestamp()) + 720})
     # Exclusive creation fails closed if another operation owns the drain.

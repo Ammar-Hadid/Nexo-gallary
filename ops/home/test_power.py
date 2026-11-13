@@ -57,6 +57,18 @@ class PowerTests(unittest.TestCase):
             release_drain(lease, request)
             self.assertFalse(request.exists())
 
+    def test_expired_crash_lease_is_reclaimed_next_night(self):
+        first = datetime(2027, 1, 1, 22, 0, tzinfo=timezone.utc)
+        next_night = datetime(2027, 1, 2, 22, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "drain-request.json"
+            first_lease = request_drain(first, path)
+            with self.assertRaises(SystemExit):
+                request_drain(first, path)
+            second_lease = request_drain(next_night, path)
+            self.assertNotEqual(first_lease, second_lease)
+            self.assertEqual(json.loads(path.read_text())["lease_id"], second_lease)
+
     def test_invalid_override_fails_closed(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "stay-awake-until"
