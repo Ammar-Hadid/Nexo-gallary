@@ -64,7 +64,9 @@ def request_drain(now: datetime, path: Path = REQUEST) -> str:
         raise SystemExit(f"Unreadable drain lease; manual inspection required: {error}") from error
     if existing is not None:
         try:
-            expired = type(existing["expires_at"]) is int and existing["expires_at"] <= int(now.timestamp())
+            lease = existing["lease_id"]
+            valid_id = type(lease) is str and len(lease) == 32 and all(char in "0123456789abcdef" for char in lease)
+            expired = valid_id and type(existing["expires_at"]) is int and existing["expires_at"] <= int(now.timestamp())
         except (TypeError, KeyError):
             expired = False
         if not expired:

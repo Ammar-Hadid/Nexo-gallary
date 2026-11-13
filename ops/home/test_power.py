@@ -69,6 +69,15 @@ class PowerTests(unittest.TestCase):
             self.assertNotEqual(first_lease, second_lease)
             self.assertEqual(json.loads(path.read_text())["lease_id"], second_lease)
 
+    def test_malformed_expired_lease_requires_manual_inspection(self):
+        now = datetime(2027, 1, 1, 22, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "drain-request.json"
+            path.write_text(json.dumps({"expires_at": 0}))
+            with self.assertRaises(SystemExit):
+                request_drain(now, path)
+            self.assertEqual(json.loads(path.read_text()), {"expires_at": 0})
+
     def test_invalid_override_fails_closed(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "stay-awake-until"
