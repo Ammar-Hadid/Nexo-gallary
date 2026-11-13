@@ -2,6 +2,8 @@
 """Guarded Nexo Gallery shutdown coordinator. Not installed or enabled by default."""
 
 import argparse
+from contextlib import contextmanager
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -55,40 +57,53 @@ def idle_ready(now: datetime, path: Path = IDLE, lease_id: str | None = None) ->
         return False
 
 
-def request_drain(now: datetime, path: Path = REQUEST) -> str:
+@contextmanager
+def lease_lock(path: Path):
+    # Never unlink this lock file: all contenders must lock the same inode.
+    fd = os.open(path.with_name(path.name + ".lock"), os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        existing = json.loads(path.read_text())
-    except FileNotFoundError:
-        existing = None
-    except (OSError, ValueError) as error:
-        raise SystemExit(f"Unreadable drain lease; manual inspection required: {error}") from error
-    if existing is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
+def request_drain(now: datetime, path: Path = REQUEST) -> str:
+    with lease_lock(path):
         try:
-            lease = existing["lease_id"]
-            valid_id = type(lease) is str and len(lease) == 32 and all(char in "0123456789abcdef" for char in lease)
-            expired = valid_id and type(existing["expires_at"]) is int and existing["expires_at"] <= int(now.timestamp())
-        except (TypeError, KeyError):
-            expired = False
-        if not expired:
-            raise SystemExit("An active or malformed drain lease exists; shutdown aborted")
-        path.unlink()  # Expired leases have already required the producer to resume.
-    lease_id = uuid.uuid4().hex
-    payload = json.dumps({"lease_id": lease_id, "expires_at": int(now.timestamp()) + 720})
-    # Exclusive creation fails closed if another operation owns the drain.
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, "w") as handle:
-        handle.write(payload)
-        handle.flush()
-        os.fsync(handle.fileno())
-    return lease_id
+            existing = json.loads(path.read_text())
+        except FileNotFoundError:
+            existing = None
+        except (OSError, ValueError) as error:
+            raise SystemExit(f"Unreadable drain lease; manual inspection required: {error}") from error
+        if existing is not None:
+            try:
+                lease = existing["lease_id"]
+                valid_id = type(lease) is str and len(lease) == 32 and all(char in "0123456789abcdef" for char in lease)
+                expired = valid_id and type(existing["expires_at"]) is int and existing["expires_at"] <= int(now.timestamp())
+            except (TypeError, KeyError):
+                expired = False
+            if not expired:
+                raise SystemExit("An active or malformed drain lease exists; shutdown aborted")
+            path.unlink()  # Expired leases have already required the producer to resume.
+        lease_id = uuid.uuid4().hex
+        payload = json.dumps({"lease_id": lease_id, "expires_at": int(now.timestamp()) + 720})
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        return lease_id
 
 
 def release_drain(lease_id: str, path: Path = REQUEST) -> None:
-    try:
-        if json.loads(path.read_text()).get("lease_id") == lease_id:
-            path.unlink()
-    except (OSError, ValueError):
-        pass  # Producer must also resume on the lease expiry.
+    with lease_lock(path):
+        try:
+            if json.loads(path.read_text()).get("lease_id") == lease_id:
+                path.unlink()
+        except (OSError, ValueError):
+            pass  # Producer must also resume on the lease expiry.
 
 
 def run_shutdown() -> None:

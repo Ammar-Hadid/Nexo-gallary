@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -77,6 +78,23 @@ class PowerTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 request_drain(now, path)
             self.assertEqual(json.loads(path.read_text()), {"expires_at": 0})
+
+    def test_concurrent_reclaim_has_one_owner(self):
+        yesterday = datetime(2027, 1, 1, 22, 0, tzinfo=timezone.utc)
+        today = datetime(2027, 1, 2, 22, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "drain-request.json"
+            request_drain(yesterday, path)
+            def contend():
+                try:
+                    return request_drain(today, path)
+                except SystemExit:
+                    return None
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                results = list(executor.map(lambda _: contend(), range(2)))
+            winners = [result for result in results if result]
+            self.assertEqual(len(winners), 1)
+            self.assertEqual(json.loads(path.read_text())["lease_id"], winners[0])
 
     def test_invalid_override_fails_closed(self):
         with tempfile.TemporaryDirectory() as folder:
