@@ -1,0 +1,11 @@
+[Unit]
+Description=Attempt Nexo Gallery shutdown at 23:00 Amsterdam time
+
+[Timer]
+OnCalendar=*-*-* 23:00:00 Europe/Amsterdam
+AccuracySec=1min
+Persistent=false
+Unit=nexo-gallery-shutdown.service
+
+[Install]
+WantedBy=timers.target

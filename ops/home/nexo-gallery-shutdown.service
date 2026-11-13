@@ -1,0 +1,10 @@
+[Unit]
+Description=Nexo Gallery guarded home-server shutdown
+Documentation=file:/etc/nexo-gallery/OPERATIONS.md
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/nexo-gallery/power.py run
+TimeoutStartSec=12min
+
