@@ -1,0 +1,31 @@
+# Preparation template only. No image digest or credentials are supplied by Git.
+name: nexo-gallery-storage
+
+services:
+  object-store:
+    image: ${NEXO_OBJECT_IMAGE:?Pin and verify an object-store image digest}
+    command: server /data --address :3200
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set in root-owned storage.env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set in root-owned storage.env}
+    ports:
+      - "127.0.0.1:3200:3200"
+    volumes:
+      - type: bind
+        source: ${NEXO_OBJECT_DATA_DIR:-/srv/nexo-gallery/objects}
+        target: /data
+        bind:
+          create_host_path: false
+    networks:
+      - storage
+    restart: "no" # systemd starts it only after mount identity verification
+    stop_grace_period: 2m
+    mem_limit: 3g
+    cpus: "2.0"
+    pids_limit: 512
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  storage:
+    driver: bridge
