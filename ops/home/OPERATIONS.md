@@ -1,0 +1,22 @@
+# Home-server operations preparation
+
+**Uninstalled and unverified.** The Shuttle is unavailable; these files do not power it off. No BIOS, disk, network, Docker, service, or tunnel setting has been changed.
+
+## Power plan
+
+- Schedule a systemd timer for 23:00 Europe/Amsterdam. The Python coordinator calculates the next calendar day's 07:00 local wake, including DST. `python3 ops/home/power.py plan` prints a dry-run timestamp. `python3 -m unittest discover -s ops/home -p 'test_*.py'` checks DST and fail-closed transfer states.
+- Installation later requires placing the service/timer under `/etc/systemd/system/`, the executable at `/usr/local/libexec/nexo-gallery/power.py`, and this guide at `/etc/nexo-gallery/OPERATIONS.md`. None of that is automated or authorized for the absent machine now. **Do not create `/etc/nexo-gallery/power-enabled` or enable the timer before all gates below pass.**
+- The ingress must first stop admitting new uploads and atomically refresh `/run/nexo-gallery/idle.json` with a timestamp (UTC epoch seconds), `active_transfers: 0`, `jobs_checkpointed: true`, and `ingress_drained: true`. This producer is not implemented. The script polls for at most ten minutes, skips shutdown on missing/stale state or active jobs, and rechecks immediately before poweroff. Jobs must checkpoint to durable storage; this flag cannot be guessed from container status.
+- Stay awake by writing a future UTC epoch to `/run/nexo-gallery/stay-awake-until`; malformed contents fail closed. A future operator needs a safe systemd command to set it and a UI, which are not built yet. A runtime file disappears on reboot, as intended.
+- On a successful gate, `rtcwake -m no -t` arms an absolute alarm, the script reads back `/sys/class/rtc/rtc0/wakealarm`, and only then calls `systemctl poweroff`. `-m no` arms without suspending; the later systemd command performs full shutdown. This is not proof that the firmware wakes from S5. Confirm BIOS RTC support and ErP/EuP settings, RTC mode, mains power, disk unlock, and wake behavior on the actual Shuttle before enabling. Shuttle documentation notes that ErP can disable scheduled wake.
+- A timer cannot run while the machine is off. Wake-on-LAN requires a distinct always-on sender on the home LAN or a verified routable path; neither is assumed. An unattended encrypted disk passphrase can block services after an RTC wake.
+
+## Deployment and recovery gates
+
+1. Read-only inspect home disk mounts, actual free space, BIOS version, RTC wake support, Docker/Compose version, network route, and secure unlock path after alias is provided. Preserve existing services and data.
+2. Pin tested Ente server/client versions and use an isolated Compose project, storage paths, DB credentials, and resource limits. The self-hosted Museum API and clients must reach the same S3 endpoint for presigned uploads. Do not substitute an internal-only endpoint. Configure authenticated TLS ingress deliberately, and record tunnel behavior when home is offline. No production Compose file is ready until the topology is measured.
+3. Back up encrypted objects plus a consistent database dump, organization/correction metadata and configuration to a **separate offsite failure domain**. Protect account recovery material separately. A home-adjacent second disk alone is insufficient. Verify versioned restore and client decryption on a clean device before any source deletion.
+4. Start services automatically after boot, verify time sync, tunnel and object store readiness, and emit measured health to VPS. A missing heartbeat must mean unknown/offline; do not report fabricated uptime. The VPS monitor is not implemented while SSH is blocked.
+5. Test the schedule in dry-run, RTC alarm-readback, S5 wake, both DST boundaries, bounded transfer grace, stay-awake override, interrupted jobs, disk unlocking and missed return. Power-cycle tests require hardware access and a separate explicit go-ahead.
+
+Sources: [systemd timer](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html), [rtcwake manual](https://man7.org/linux/man-pages/man8/rtcwake.8.html), [Shuttle BIOS guide](https://download.shuttle.eu/Mirror/MiniPC%26AIO/slim/XH310R_XH310RV/Manual/MANUAL.PDF), [Shuttle ErP caveat](https://archive.shuttle.eu/2020/www1.shuttle.eu/fileadmin/resources/download/docs/eu/XH310_V__EU617_2013.pdf), [Ente backup guidance](https://help.ente.io/self-hosting/administration/backup), [Ente object storage](https://help.ente.io/self-hosting/administration/object-storage).
