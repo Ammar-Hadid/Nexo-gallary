@@ -1,6 +1,6 @@
 # Nexo Gallery: foundation decision
 
-Status: phase 1 candidate, 13 November 2026. This document describes a target architecture, not an operational system.
+Status: conditional phase 1 decision, reviewed 14 November 2026. This document describes a target architecture, not an operational system. Current evidence is tracked in `docs/STATUS.md`.
 
 ## Decision
 
@@ -8,7 +8,7 @@ Use Ente's self-hosted Photos server and clients as the **production media found
 
 Ente already supplies client-side encryption, mobile backup, native apps, local face and semantic indexing, encrypted index synchronization, export, and a self-hostable server. Its server issues presigned S3 URLs: both clients and server must reach the **same storage endpoint**. The home object store therefore needs a stable, authenticated TLS route; a VPS catalog alone cannot make an offline home server serve an uncached original. The precise VPS/home split, storage routing, and power schedule require integration testing. Prefer an outbound home tunnel to an isolated VPS ingress if its security and bandwidth are acceptable; no tunnel is deployed yet.
 
-The VPS appears too crowded for an assumed new database, Ente server, and proxy based on prior observations. Current inspection is blocked: on 13 November 2026, `ssh -o BatchMode=yes -o ConnectTimeout=8 nexo-vps ...` from this execution sandbox failed before login with `Operation not permitted` (exit 255). The user later supplied the Shuttle SSH target; its read-only connection also failed before authentication with `Operation not permitted`. These establish local TCP access failures, not either server's health or capacity. Re-run read-only `uptime`, `free -h`, `df -h /`, `docker ps`, and `docker system df` when SSH transport is available. No VPS or Shuttle deployment or capacity claim is authorized by this document.
+Read-only SSH inspection succeeded on both hosts on 14 November 2026. The VPS has 3.7 GiB RAM, about 2 GiB available, 31 GiB free on its root filesystem and 17 running containers. Shuttle has 15 GiB RAM, about 8.7 GiB available, and 69 GiB free on its current 100 GiB root logical volume; its larger disk layout and an independent backup remain unresolved. These observations do not establish fit for the intended production topology. No gallery service was deployed to either host.
 
 ## Bounded comparison
 
@@ -62,14 +62,14 @@ This does **not** establish that total recurring cost meets the $2–3 target. A
 
 | Phase | Acceptance gate | Current state |
 | --- | --- | --- |
-| 1 Foundation | Research decision, threat/cost ledger, real VPS inspection or exact reproducible transport blocker, independent review | In progress; local TCP connection denied before login |
-| 2 Shell | Responsive home, all media, albums, search, viewer and offline/partial states with marked fixtures; rendered phone/tablet/desktop review | Pending |
+| 1 Foundation | Research decision, threat/cost ledger, real VPS inspection or exact reproducible transport blocker, independent review | Conditional decision reviewed; both hosts inspected read-only |
+| 2 Shell | Responsive home, all media, albums, search, viewer and offline/partial states with marked fixtures; rendered phone/tablet/desktop review | Fixture shell reviewed and merged; no real data integration |
 | 3 Secure slice | Disposable asset encrypted before upload, stored, synced, decrypted, recovered after interruption; representative album create/add through trusted client or local worker; inspect persisted originals, thumbnails/previews, album names, sensitive metadata and any present OCR/search-index payloads plus VPS traffic for plaintext content or keys | Pending hardware-independent local test |
 | 4 Library | Reversible album/favorite/archive changes, duplicates and explicit trash semantics at scale | Pending |
 | 5 Search | Trusted-device semantic, people, metadata and explicit OCR indexing; offline and incomplete index tests; inspect generated OCR, face and semantic payloads on server for encryption | Pending |
 | 6 Devices | Native background imports, share sheet, desktop, tablet, iPhone signing/distribution preparation; real OS checks | Pending devices/signing |
 | 7 Nexo API | Authenticated scoped commands through trusted worker, idempotent operations and offline outcome | Pending |
-| 8 Operations | Isolated VPS deployment if capacity permits, Shuttle install package, tunnel, backups and power tooling; simulated states | VPS and Shuttle deployment blocked |
-| 9 Release | Actual Shuttle, offsite restore, representative HEIC/HEVC/HDR/Live/Motion media, power and migration verification; inventory every source asset, flag size/format failures and retain excluded items explicitly | Shuttle target provided, SSH transport blocked; offsite backup device unresolved |
+| 8 Operations | Isolated VPS deployment if capacity permits, Shuttle install package, tunnel, backups and power tooling; simulated states | Templates reviewed; no deployment, tunnel, backup or power test |
+| 9 Release | Actual Shuttle, offsite restore, representative HEIC/HEVC/HDR/Live/Motion media, power and migration verification; inventory every source asset, flag size/format failures and retain excluded items explicitly | Offsite backup and clean restore unresolved |
 
 Dependent phases advance only after their gates pass. The shell may be built independently while secure topology is unresolved, but remains a prototype. Each phase is committed before fresh-context review; fixes get separate commits and another review.
