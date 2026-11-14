@@ -2,7 +2,7 @@ import { media, photo } from './data.js';
 import { findMedia, formatDate } from './model.js';
 
 const app = document.querySelector('#app');
-const state = { page: 'home', query: '', type: 'all', album: null, selected: null, offline: false, index: 'partial', favorites: new Set(), albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'] };
+const state = { page: 'home', query: '', type: 'all', album: null, selected: null, viewerOpener: null, offline: false, index: 'partial', favorites: new Set(), albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'] };
 
 const icon = (name, size = 20) => {
   const paths = {
@@ -23,7 +23,7 @@ const icon = (name, size = 20) => {
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query, state.type) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
 function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; const favoriteFocused = document.activeElement?.dataset.favorite !== undefined; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); else if (favoriteFocused) document.querySelector('[data-favorite]')?.focus(); } }
-function closeViewer() { const id = state.selected; state.selected = null; render(); const card = document.querySelector(`[data-open="${id}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
+function closeViewer() { const opener = state.viewerOpener; state.selected = null; state.viewerOpener = null; render(); const card = document.querySelector(`[data-open="${opener}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
 function focusHeading() { const heading = document.querySelector('#main h1'); if (heading) { heading.tabIndex = -1; heading.focus(); } }
 function navigate(page) { state.page = page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null; render(); window.scrollTo(0, 0); if (page === 'search') document.querySelector('#main-search')?.focus(); else focusHeading(); }
 
@@ -104,7 +104,7 @@ app.addEventListener('click', event => {
   const target = event.target.closest('button');
   if (!target) return;
   if (target.dataset.page) { navigate(target.dataset.page); }
-  else if (target.dataset.open) { state.selected = target.dataset.open; render(); }
+  else if (target.dataset.open) { state.selected = target.dataset.open; state.viewerOpener = target.dataset.open; render(); }
   else if (target.dataset.close !== undefined) { closeViewer(); }
   else if (target.dataset.step) { moveViewer(Number(target.dataset.step)); }
   else if (target.dataset.favorite) { const wasFavorite = state.favorites.has(target.dataset.favorite); wasFavorite ? state.favorites.delete(target.dataset.favorite) : state.favorites.add(target.dataset.favorite); if (state.page === 'favorites' && wasFavorite) closeViewer(); else { render(); document.querySelector('[data-favorite]')?.focus(); } }
