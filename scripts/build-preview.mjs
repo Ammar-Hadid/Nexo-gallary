@@ -1,7 +1,11 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 
 const html = await readFile('index.html', 'utf8');
-const tokens = await readFile('src/tokens.css', 'utf8');
+const font = await readFile('assets/fonts/manrope-latin-wght-normal.woff2');
+const tokens = (await readFile('src/tokens.css', 'utf8')).replace(
+  '../assets/fonts/manrope-latin-wght-normal.woff2',
+  `data:font/woff2;base64,${font.toString('base64')}`
+);
 const css = await readFile('src/styles.css', 'utf8');
 const data = (await readFile('src/data.js', 'utf8')).replaceAll('export const', 'const');
 const model = (await readFile('src/model.js', 'utf8')).replace("import { media } from './data.js';", '').replaceAll('export function', 'function');
