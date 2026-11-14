@@ -17,7 +17,7 @@ Updated 14 November 2026. This is an evidence ledger, not a claim that the galle
 
 ## Gates still blocking real media
 
-- Secure slice: no demonstrated client import, encrypted wire payload, encrypted original or thumbnail, catalog sync, download/decryption, interruption recovery or album mutation. The local test account requires the user's own acceptance of Ente's signup terms. The local evaluation has no real media.
+- Secure slice: no demonstrated client import, encrypted wire payload, encrypted original or thumbnail, catalog sync, download/decryption, interruption recovery or album mutation. The user accepted Ente's signup terms for a disposable local account; password creation and signup remain in their hands. The local evaluation has no real media.
 - Backups: independent offsite storage, a consistent object-plus-database snapshot, protected recovery material and a clean restore are absent. Keep all Apple/Samsung originals.
 - Operations: Shuttle storage layout, tunnel, stable object endpoint, disk unlock and scheduled wake are unverified on hardware. VPS fit and availability are unproven. No deployment is running on either server.
 - Devices and distribution: native background import, representative HEIC/HEVC/HDR/Live/Motion media, real-device tests, branded iPhone signing and Apple Developer Program decision are pending.

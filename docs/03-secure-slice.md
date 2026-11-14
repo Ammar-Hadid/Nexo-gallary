@@ -8,7 +8,7 @@ The official Ente quickstart generated an isolated Compose project outside this 
 
 Observed: Museum `/ping` and the web app return HTTP 200; Museum and Postgres report healthy; all five containers run. Before signup, the local `users`, `collections` and `files` tables each contain zero rows. These checks establish service startup only.
 
-The local Ente web signup requires agreement to Ente's terms. The user must accept these personally. The restricted local hardcoded test code is reusable until its configuration is removed; remove it after signup. A disposable account and synthetic upload have not yet been completed.
+The local Ente web signup requires agreement to Ente's terms. The user accepted the terms for this disposable account. The restricted local hardcoded test code is reusable until its configuration is removed; keep it only for the disposable round trip, including fresh-client sign-in, then remove it. A disposable account and synthetic upload have not yet been completed.
 
 ## Protocol evidence available from source
 
