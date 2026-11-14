@@ -1,0 +1,72 @@
+/* Nexo Gallery design tokens. Edit these values to restyle both themes. */
+:root {
+  color-scheme: light;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --page-gutter: clamp(24px, 5vw, 82px);
+  --radius-control: 10px;
+  --radius-card: 15px;
+  --radius-panel: 20px;
+
+  --color-primary: #ef3e4a;
+  --color-primary-text: color-mix(in srgb, var(--color-primary) 75%, black);
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  --color-canvas: #f6f5f1;
+  --color-surface: #fffefa;
+  --color-panel: #ebeae3;
+  --color-ink: #222722;
+  --color-strong: #303b30;
+  --color-muted: #59645a;
+  --color-line: #dedfd8;
+  --color-line-strong: #aeb4aa;
+  --color-sidebar: #222722;
+  --color-sidebar-active: #363b35;
+  --color-sidebar-text: #b6bdb6;
+  --color-sidebar-muted: #aab5ab;
+  --color-sidebar-on: #f9f8f3;
+  --color-visual-placeholder: #d5d5cb;
+  --color-album-empty: #e8e8e0;
+  --color-filter-selected: #303a32;
+  --color-filter-selected-text: #ffffff;
+  --color-filter-hover: #e9eae3;
+  --color-avatar-bg: #d9d7cd;
+  --color-avatar-ink: #343831;
+  --color-online: #829879;
+  --color-offline: var(--color-primary);
+
+  --color-white: #ffffff;
+  --color-video-badge: #1e2525b0;
+  --color-viewer: #171b19;
+  --color-viewer-control: #ffffff14;
+  --color-viewer-muted: #c5d0c5;
+  --color-viewer-line: #49534c;
+  --color-viewer-primary: color-mix(in srgb, var(--color-primary) 70%, white);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary-text: color-mix(in srgb, var(--color-primary) 70%, white);
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 20%, var(--color-canvas));
+  --color-canvas: #181d1a;
+  --color-surface: #252d27;
+  --color-panel: #29332c;
+  --color-ink: #f1f2eb;
+  --color-strong: #e2e9df;
+  --color-muted: #b8c8ba;
+  --color-line: #465248;
+  --color-line-strong: #697769;
+  --color-sidebar: #111713;
+  --color-sidebar-active: #303a32;
+  --color-sidebar-text: #c8d5c9;
+  --color-sidebar-muted: #c2d0c1;
+  --color-sidebar-on: #f1f2eb;
+  --color-visual-placeholder: #303a32;
+  --color-album-empty: #303a32;
+  --color-filter-selected: #d7e1d5;
+  --color-filter-selected-text: #182019;
+  --color-filter-hover: #303a32;
+  --color-avatar-bg: #455046;
+  --color-avatar-ink: #f1f2eb;
+}

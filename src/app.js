@@ -2,7 +2,15 @@ import { media, photo } from './data.js';
 import { findMedia, formatDate } from './model.js';
 
 const app = document.querySelector('#app');
-const state = { page: 'home', query: '', type: 'all', album: null, selected: null, viewerOpener: null, offline: false, index: 'partial', favorites: new Set(), albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'] };
+function initialTheme() {
+  try {
+    const saved = localStorage.getItem('nexo-gallery-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch { /* Storage can be unavailable in a local preview. */ }
+  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
+}
+const state = { page: 'home', query: '', type: 'all', album: null, selected: null, viewerOpener: null, offline: false, index: 'partial', theme: initialTheme(), favorites: new Set(), albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'] };
+document.documentElement.dataset.theme = state.theme;
 
 const icon = (name, size = 20) => {
   const paths = {
@@ -17,6 +25,8 @@ const icon = (name, size = 20) => {
     plus: '<path d="M12 4v16M4 12h16"/>',
     download: '<path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/>',
     video: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+    moon: '<path d="M20.5 15.7A8.5 8.5 0 0 1 8.3 3.5 8.5 8.5 0 1 0 20.5 15.7z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   };
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 };
@@ -95,7 +105,7 @@ function viewer() {
 function render() {
   document.body.classList.toggle('viewer-open', Boolean(state.selected));
   app.innerHTML = `<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark">N<span>✳</span></span><span>NEXO <small>GALLERY</small></span></div><div class="nav-group"><span class="nav-label">LIBRARY</span>${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</div><div class="sidebar-bottom"><div class="sidebar-caption">A quieter way to remember.</div><div class="sample-indicator"><span></span> Prototype · sample media</div></div></aside>
-    <div class="main-column"><header class="topbar"><button class="mobile-brand" data-page="home" aria-label="Nexo Gallery home">N<span>✳</span></button><button class="top-search" data-page="search">${icon('search', 19)} <span>Search your gallery</span><kbd>⌘ K</kbd></button><div class="top-actions"><button class="availability-control" data-offline aria-pressed="${state.offline}" title="Toggle simulated home server state"><span class="status-dot ${state.offline ? 'offline' : ''}"></span>${state.offline ? 'Simulated offline' : 'Simulated online'}</button><span class="avatar" aria-label="Personal space">A</span></div></header><main id="main">${state.page === 'home' ? home() : state.page === 'all' ? allMedia() : state.page === 'albums' ? albums() : state.page === 'favorites' ? favorites() : searchPage()}</main><footer class="footer">NEXO GALLERY <span>Prototype · all content and status are sample data</span></footer></div>
+    <div class="main-column"><header class="topbar"><button class="mobile-brand" data-page="home" aria-label="Nexo Gallery home">N<span>✳</span></button><button class="top-search" data-page="search">${icon('search', 19)} <span>Search your gallery</span><kbd>⌘ K</kbd></button><div class="top-actions"><button class="theme-control" data-theme aria-label="Dark theme" aria-pressed="${state.theme === 'dark'}" title="Toggle dark theme">${icon(state.theme === 'dark' ? 'sun' : 'moon', 17)}<span>Dark theme</span></button><button class="availability-control" data-offline aria-pressed="${state.offline}" title="Toggle simulated home server state"><span class="status-dot ${state.offline ? 'offline' : ''}"></span>${state.offline ? 'Simulated offline' : 'Simulated online'}</button><span class="avatar" aria-label="Personal space">A</span></div></header><main id="main">${state.page === 'home' ? home() : state.page === 'all' ? allMedia() : state.page === 'albums' ? albums() : state.page === 'favorites' ? favorites() : searchPage()}</main><footer class="footer">NEXO GALLERY <span>Prototype · all content and status are sample data</span></footer></div>
     <nav class="mobile-nav" aria-label="Main navigation">${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('search', 'Search', 'search')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</nav></div>${state.selected ? viewer() : ''}`;
   if (state.selected) { document.querySelector('.layout').inert = true; document.querySelector('[data-close]')?.focus(); }
 }
@@ -113,6 +123,7 @@ app.addEventListener('click', event => {
   else if (target.dataset.suggest) { state.query = target.dataset.suggest; render(); document.querySelector('#main-search')?.focus(); }
   else if (target.dataset.clear !== undefined) { state.query = ''; state.type = 'all'; render(); (document.querySelector('#main-search') || document.querySelector('[data-type="all"]'))?.focus(); }
   else if (target.dataset.offline !== undefined) { state.offline = !state.offline; render(); document.querySelector('[data-offline]')?.focus(); }
+  else if (target.dataset.theme !== undefined) { state.theme = state.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = state.theme; try { localStorage.setItem('nexo-gallery-theme', state.theme); } catch { /* The toggle still works for this page. */ } render(); document.querySelector('button[data-theme]')?.focus(); }
   else if (target.dataset.index !== undefined) { state.index = state.index === 'partial' ? 'complete' : 'partial'; render(); document.querySelector('[data-index]')?.focus(); }
   else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (resets on reload)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); [...document.querySelectorAll('[data-album]')].find(button => button.dataset.album === name.trim())?.focus(); } }
 });

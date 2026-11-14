@@ -2,9 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-test('shell includes its base layout rules as well as responsive overrides', () => {
+test('shell loads its tokens and retains the base layout and mobile rules', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const tokens = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8');
   const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
-  for (const rule of [':root{', '.layout{display:flex', '.sidebar{', '.media-grid{', '.viewer{', '@media(max-width:740px)']) {
-    assert.ok(css.includes(rule), `Missing core style rule: ${rule}`);
+  assert.ok(html.includes('tokens.css') && html.indexOf('tokens.css') < html.indexOf('styles.css'));
+  assert.match(tokens, /--color-primary:\s*#EF3E4A/i);
+  for (const selector of [/\.layout\s*\{/, /\.sidebar\s*\{/, /\.media-grid\s*\{/, /\.viewer\s*\{/]) {
+    assert.match(css, selector);
   }
+  assert.match(css, /@media\s*\(max-width:\s*740px\)/);
 });
