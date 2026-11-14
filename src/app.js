@@ -71,7 +71,7 @@ function albums() {
 function searchPage() {
   return `<section class="page-heading"><div><span class="eyebrow">FIND YOUR WAY BACK</span><h1>Search</h1><p>Begin with a place, a date, or what you remember.</p></div></section>
     <div class="search-large">${icon('search', 24)}<input id="main-search" type="search" placeholder="Try ‘Kyoto’, ‘mountains’, or ‘2026’" value="${escapeHtml(state.query)}" aria-label="Search sample media" autocomplete="off" /></div>
-    <div class="index-note"><span class="note-dot"></span><div><strong>Sample indexing state: ${state.index === 'partial' ? 'incomplete' : 'complete'}</strong><p>${state.index === 'partial' ? 'In a real library, results may be partial while trusted devices build and sync their indexes.' : 'This still searches only fixture labels. Semantic, face, and OCR search are not connected.'}</p></div><button class="note-toggle" data-index>Switch sample state</button></div>
+    <div class="index-note"><span class="note-dot"></span><div><strong>Sample indexing state: ${state.index === 'partial' ? 'incomplete' : 'complete'}</strong><p>${state.index === 'partial' ? 'In a real library, results may be partial while trusted devices build and sync their indexes.' : 'This still searches only fixture labels. Semantic, face, and OCR search are not connected.'}</p></div><button class="note-toggle" data-index aria-pressed="${state.index === 'complete'}">Indexing complete</button></div>
     <div id="search-results" aria-live="polite">${searchResults()}</div>`;
 }
 
@@ -124,7 +124,7 @@ app.addEventListener('input', event => {
 });
 
 document.addEventListener('keydown', event => {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); navigate('search'); }
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); if (state.page === 'search') document.querySelector('#main-search')?.focus(); else navigate('search'); }
   if (!state.selected) return;
   if (event.key === 'Escape') { closeViewer(); }
   if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') moveViewer(event.key === 'ArrowRight' ? 1 : -1);
