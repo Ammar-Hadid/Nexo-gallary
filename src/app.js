@@ -24,6 +24,8 @@ const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;'
 const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query, state.type) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
 function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; const favoriteFocused = document.activeElement?.dataset.favorite !== undefined; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); else if (favoriteFocused) document.querySelector('[data-favorite]')?.focus(); } }
 function closeViewer() { const id = state.selected; state.selected = null; render(); const card = document.querySelector(`[data-open="${id}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
+function focusHeading() { const heading = document.querySelector('#main h1'); if (heading) { heading.tabIndex = -1; heading.focus(); } }
+function navigate(page) { state.page = page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null; render(); window.scrollTo(0, 0); if (page === 'search') document.querySelector('#main-search')?.focus(); else focusHeading(); }
 
 function navButton(page, label, symbol) {
   return `<button class="nav-item ${state.page === page ? 'active' : ''}" data-page="${page}" ${state.page === page ? 'aria-current="page"' : ''}>${icon(symbol)}<span>${label}</span></button>`;
@@ -87,7 +89,7 @@ function viewer() {
   const item = media.find(x => x.id === state.selected);
   if (!item) return '';
   const items = viewerItems(); const idx = items.findIndex(x => x.id === item.id);
-  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer"><div class="viewer-top"><button class="icon-button" data-close aria-label="Close viewer">${icon('close', 23)}</button><span>Sample media · ${idx + 1} of ${items.length}</span><button class="viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 19)} ${state.favorites.has(item.id) ? 'Favorited' : 'Favorite'}</button></div><div class="viewer-body"><button class="viewer-arrow previous" data-step="-1" aria-label="Previous item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button><img src="${photo(item, 1800)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /><button class="viewer-arrow" data-step="1" aria-label="Next item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button></div><div class="viewer-bottom"><div><span class="eyebrow">${escapeHtml(item.type.toUpperCase())} · SAMPLE</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.place)} · ${formatDate(item.date)}</p></div><span class="availability">${item.type === 'video' ? 'Sample poster · video playback not connected' : state.offline ? 'Sample original unavailable · server offline' : 'Sample preview · original not connected'}</span></div></div>`;
+  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer"><div class="viewer-top"><button class="icon-button" data-close aria-label="Close viewer">${icon('close', 23)}</button><span>Sample media · ${idx + 1} of ${items.length}</span><button class="viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 19)} ${state.favorites.has(item.id) ? 'Favorited' : 'Favorite'}</button></div><div class="viewer-body"><button class="viewer-arrow previous" data-step="-1" aria-label="Previous item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button><img src="${photo(item, 1800)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /><button class="viewer-arrow" data-step="1" aria-label="Next item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button></div><div class="viewer-bottom"><div><span class="eyebrow">${escapeHtml(item.type.toUpperCase())} · SAMPLE</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.place)} · ${formatDate(item.date)}</p></div><span class="availability">${item.type === 'video' ? 'Sample poster · video playback not connected' : state.offline ? 'Sample preview · simulated offline · original not connected' : 'Sample preview · original not connected'}</span></div></div>`;
 }
 
 function render() {
@@ -101,18 +103,18 @@ function render() {
 app.addEventListener('click', event => {
   const target = event.target.closest('button');
   if (!target) return;
-  if (target.dataset.page) { state.page = target.dataset.page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null; render(); window.scrollTo(0, 0); if (state.page === 'search') document.querySelector('#main-search')?.focus(); }
+  if (target.dataset.page) { navigate(target.dataset.page); }
   else if (target.dataset.open) { state.selected = target.dataset.open; render(); }
   else if (target.dataset.close !== undefined) { closeViewer(); }
   else if (target.dataset.step) { moveViewer(Number(target.dataset.step)); }
   else if (target.dataset.favorite) { const wasFavorite = state.favorites.has(target.dataset.favorite); wasFavorite ? state.favorites.delete(target.dataset.favorite) : state.favorites.add(target.dataset.favorite); if (state.page === 'favorites' && wasFavorite) closeViewer(); else { render(); document.querySelector('[data-favorite]')?.focus(); } }
-  else if (target.dataset.type) { state.type = target.dataset.type; render(); }
-  else if (target.dataset.album) { state.album = target.dataset.album; state.page = 'all'; render(); }
+  else if (target.dataset.type) { state.type = target.dataset.type; render(); document.querySelector(`[data-type="${state.type}"]`)?.focus(); }
+  else if (target.dataset.album) { state.album = target.dataset.album; state.page = 'all'; render(); focusHeading(); }
   else if (target.dataset.suggest) { state.query = target.dataset.suggest; render(); document.querySelector('#main-search')?.focus(); }
-  else if (target.dataset.clear !== undefined) { state.query = ''; state.type = 'all'; render(); }
-  else if (target.dataset.offline !== undefined) { state.offline = !state.offline; render(); }
-  else if (target.dataset.index !== undefined) { state.index = state.index === 'partial' ? 'complete' : 'partial'; render(); }
-  else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (resets on reload)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); } }
+  else if (target.dataset.clear !== undefined) { state.query = ''; state.type = 'all'; render(); (document.querySelector('#main-search') || document.querySelector('[data-type="all"]'))?.focus(); }
+  else if (target.dataset.offline !== undefined) { state.offline = !state.offline; render(); document.querySelector('[data-offline]')?.focus(); }
+  else if (target.dataset.index !== undefined) { state.index = state.index === 'partial' ? 'complete' : 'partial'; render(); document.querySelector('[data-index]')?.focus(); }
+  else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (resets on reload)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); [...document.querySelectorAll('[data-album]')].find(button => button.dataset.album === name.trim())?.focus(); } }
 });
 
 app.addEventListener('input', event => {
@@ -122,7 +124,7 @@ app.addEventListener('input', event => {
 });
 
 document.addEventListener('keydown', event => {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); state.page = 'search'; render(); document.querySelector('#main-search')?.focus(); }
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); navigate('search'); }
   if (!state.selected) return;
   if (event.key === 'Escape') { closeViewer(); }
   if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') moveViewer(event.key === 'ArrowRight' ? 1 : -1);
