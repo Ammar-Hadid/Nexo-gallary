@@ -125,7 +125,7 @@ h2 {
 .nav-item:hover,
 .nav-item.active {
   background: var(--color-sidebar-active);
-  color: white;
+  color: var(--color-white);
 }
 .nav-item.active:before {
   content: "";
@@ -298,7 +298,7 @@ main {
   border-radius: var(--radius-panel);
   min-height: 440px;
   background: var(--color-visual-placeholder);
-  color: white;
+  color: var(--color-white);
   text-align: left;
   padding: 0;
 }
@@ -320,7 +320,7 @@ main {
   content: "";
   position: absolute;
   inset: 45% 0 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.61));
+  background: linear-gradient(transparent, var(--color-feature-overlay));
   pointer-events: none;
 }
 .feature-label {
@@ -423,7 +423,7 @@ main {
   border-radius: var(--radius-card);
   overflow: hidden;
   background: var(--color-visual-placeholder);
-  color: white;
+  color: var(--color-white);
   text-align: left;
   padding: 0;
 }
@@ -431,7 +431,7 @@ main {
   content: "";
   position: absolute;
   inset: 55% 0 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  background: linear-gradient(transparent, var(--color-media-overlay));
   pointer-events: none;
 }
 .card-caption {
@@ -676,7 +676,7 @@ main {
   align-items: center;
   justify-content: center;
   background: var(--color-viewer-control);
-  color: white;
+  color: var(--color-white);
   border-radius: 9px;
   padding: 10px;
 }

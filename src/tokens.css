@@ -36,6 +36,8 @@
   --color-offline: var(--color-primary);
 
   --color-white: #ffffff;
+  --color-feature-overlay: rgba(0, 0, 0, 0.61);
+  --color-media-overlay: rgba(0, 0, 0, 0.55);
   --color-video-badge: #1e2525b0;
   --color-viewer: #171b19;
   --color-viewer-control: #ffffff14;
