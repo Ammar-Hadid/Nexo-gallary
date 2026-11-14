@@ -6,7 +6,7 @@ No deployed or integrated gallery exists yet. The initial application shell uses
 
 ## Prototype
 
-Run `python3 -m http.server 4173` from the repository root, then open `http://localhost:4173`. Run `node --test src/model.test.js` for fixture search tests. There are no package dependencies. See [visual system](docs/02-design.md).
+Run `python3 -m http.server 4173` from the repository root, then open `http://localhost:4173`. Run `npm test` for fixture search and shell structure checks. There are no package dependencies. See [visual system](docs/02-design.md).
 
 If local ports are unavailable, run `npm run preview` and open `dist/preview.html` directly in a browser. This generated file stays out of Git.
 
