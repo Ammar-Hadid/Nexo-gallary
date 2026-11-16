@@ -10,7 +10,7 @@ Run `python3 -m http.server 4173` from the repository root, then open `http://lo
 
 If local ports are unavailable, run `npm run preview` and open `dist/preview.html` directly in a browser. This generated file stays out of Git.
 
-All photos, album names, search results, indexing progress and online/offline states are sample data. The fixture photos are loaded from Unsplash and require a network connection. The shell has no authentication, encryption, import, persistent storage, or integration with Ente/Nexo; do not put personal media into it.
+The photo timeline, albums, search results, and video poster are sample data. Favorites last for the current page session; only the theme choice is saved. Fixture photos are loaded from Unsplash and require a network connection. The shell has no authentication, encryption, media import, persistent gallery storage, or integration with Ente/Nexo; do not put personal media into it.
 
 ## Home operations preparation
 

@@ -1,4 +1,4 @@
-/* Nexo Gallery design tokens. Change the values here to restyle both themes. */
+/* Nexo Gallery design tokens. Edit these values to restyle both themes. */
 @font-face {
   font-family: "Manrope";
   src: url("../assets/fonts/manrope-latin-wght-normal.woff2") format("woff2");
@@ -9,75 +9,52 @@
 
 :root {
   color-scheme: light;
-
   --font-ui: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --page-gutter: clamp(24px, 4vw, 72px);
-  --radius-control: 12px;
-  --radius-card: 16px;
-  --radius-panel: 20px;
-
-  --color-primary: #ef3e4a;
-  --color-primary-on: #0a0b0d;
-  --color-primary-text: color-mix(in srgb, var(--color-primary) 75%, black);
-  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
-  --color-canvas: #f5f5f7;
+  --color-primary: #EF3E4A;
+  --color-canvas: #f6f6f7;
   --color-surface: #ffffff;
-  --color-panel: #ebecf0;
+  --color-surface-raised: #eeeff1;
   --color-ink: #17181c;
-  --color-strong: #25262b;
-  --color-muted: #62656e;
-  --color-line: #dedfe4;
-  --color-line-strong: #aeb1ba;
-  --color-sidebar: #111216;
-  --color-sidebar-active: #27292f;
-  --color-sidebar-text: #bdc0c8;
-  --color-sidebar-muted: #a9adb8;
-  --color-sidebar-on: #f5f5f7;
-  --color-visual-placeholder: #dfe0e5;
-  --color-album-empty: #e8e9ed;
-  --color-filter-selected: #24262b;
-  --color-filter-selected-text: #ffffff;
-  --color-filter-hover: #e8e9ee;
-  --color-avatar-bg: #dedfe5;
-  --color-avatar-ink: #32343b;
-  --color-online: #8aa7bc;
-  --color-offline: var(--color-primary);
-
-  --color-white: #ffffff;
-  --color-feature-overlay: rgba(0, 0, 0, 0.61);
-  --color-media-overlay: rgba(0, 0, 0, 0.55);
-  --color-video-badge: #15161bc9;
-  --color-viewer: #0b0c0f;
-  --color-viewer-control: #ffffff14;
-  --color-viewer-muted: #b6b9c2;
-  --color-viewer-line: #41434b;
-  --color-viewer-primary: color-mix(in srgb, var(--color-primary) 70%, white);
+  --color-muted: #6e7079;
+  --color-subtle: #999ca4;
+  --color-line: #e2e3e7;
+  --color-hover: #e9e9ec;
+  --color-online: #7e9d9b;
+  --color-sidebar: #f9f9fa;
+  --color-sidebar-ink: #24252a;
+  --color-sidebar-muted: #747680;
+  --color-sidebar-active: #e8e9ec;
+  --color-viewer: #090a0d;
+  --color-viewer-ink: #ffffff;
+  --color-viewer-muted: #b6b8c0;
+  --color-viewer-control: rgba(35, 36, 42, .72);
+  --color-viewer-control-hover: rgba(70, 71, 78, .86);
+  --color-viewer-panel: rgba(28, 29, 35, .97);
+  --color-viewer-line: rgba(255, 255, 255, .18);
+  --color-viewer-top-fade: linear-gradient(to bottom, rgba(0,0,0,.56), transparent);
+  --color-viewer-bottom-fade: linear-gradient(to top, rgba(0,0,0,.75), transparent);
+  --color-image-placeholder: #dedfe2;
+  --color-focus: var(--color-primary);
+  --sidebar-width: 228px;
+  --content-gutter: clamp(22px, 3.3vw, 52px);
+  --radius-panel: 18px;
+  --grid-gap: 5px;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-
-  --color-primary-text: color-mix(in srgb, var(--color-primary) 70%, white);
-  --color-primary-soft: color-mix(in srgb, var(--color-primary) 20%, var(--color-canvas));
-  --color-canvas: #0d0e11;
-  --color-surface: #191a1f;
-  --color-panel: #202127;
-  --color-ink: #f4f4f6;
-  --color-strong: #e3e4e8;
-  --color-muted: #aeb0b9;
-  --color-line: #303139;
-  --color-line-strong: #555761;
-  --color-sidebar: #0a0b0d;
-  --color-sidebar-active: #26272d;
-  --color-sidebar-text: #c5c7d0;
-  --color-sidebar-muted: #aeb1bb;
-  --color-sidebar-on: #f4f4f6;
-  --color-visual-placeholder: #27282f;
-  --color-album-empty: #202127;
-  --color-filter-selected: #e8e9ed;
-  --color-filter-selected-text: #17181c;
-  --color-filter-hover: #26272d;
-  --color-avatar-bg: #303139;
-  --color-avatar-ink: #f4f4f6;
+  --color-canvas: #101114;
+  --color-surface: #18191d;
+  --color-surface-raised: #232429;
+  --color-ink: #f3f3f5;
+  --color-muted: #a4a6af;
+  --color-subtle: #777982;
+  --color-line: #2b2c32;
+  --color-hover: #292a30;
+  --color-online: #91aaa8;
+  --color-sidebar: #0d0e11;
+  --color-sidebar-ink: #f0f0f2;
+  --color-sidebar-muted: #999ba5;
+  --color-sidebar-active: #25262c;
+  --color-image-placeholder: #292a30;
 }

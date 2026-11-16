@@ -2,130 +2,175 @@ import { media, photo } from './data.js';
 import { findMedia, formatDate } from './model.js';
 
 const app = document.querySelector('#app');
+
 function initialTheme() {
   try {
     const saved = localStorage.getItem('nexo-gallery-theme');
     if (saved === 'light' || saved === 'dark') return saved;
-  } catch { /* Storage can be unavailable in a local preview. */ }
+  } catch { /* Storage may be unavailable in a local preview. */ }
   return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
 }
-const state = { page: 'home', query: '', type: 'all', album: null, selected: null, viewerOpener: null, offline: false, index: 'partial', theme: initialTheme(), favorites: new Set(), albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'] };
+
+const state = {
+  page: 'all', query: '', type: 'all', album: null, grouping: 'all',
+  selected: null, viewerOpener: null, viewerChrome: true, viewerInfo: false,
+  theme: initialTheme(), favorites: new Set(),
+  albums: ['Japan notes', 'Mountain light', 'Coastlines', 'Everyday'],
+};
 document.documentElement.dataset.theme = state.theme;
 
-const icon = (name, size = 20) => {
-  const paths = {
-    search: '<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>',
-    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
-    home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-7h6v7"/>',
-    album: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2h10M7 9h10M7 13h7"/>',
-    heart: '<path d="M20.8 8.6c0 4.1-8.8 10.8-8.8 10.8S3.2 12.7 3.2 8.6a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2z"/>',
-    arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
-    close: '<path d="M5 5 19 19M19 5 5 19"/>',
-    chevron: '<path d="m9 18 6-6-6-6"/>',
-    plus: '<path d="M12 4v16M4 12h16"/>',
-    download: '<path d="M12 3v12m-4-4 4 4 4-4M4 18v3h16v-3"/>',
-    video: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
-    moon: '<path d="M20.5 15.7A8.5 8.5 0 0 1 8.3 3.5 8.5 8.5 0 1 0 20.5 15.7z"/>',
-    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  };
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
+const paths = {
+  photos: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/>',
+  albums: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M7 2h10M8 10h8M8 14h8"/>',
+  heart: '<path d="M20.8 8.6c0 4.1-8.8 10.8-8.8 10.8S3.2 12.7 3.2 8.6a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2z"/>',
+  search: '<circle cx="10.8" cy="10.8" r="7.2"/><path d="m16.2 16.2 4.4 4.4"/>',
+  back: '<path d="m14.5 4.5-7.5 7.5 7.5 7.5"/>',
+  next: '<path d="m9.5 4.5 7.5 7.5-7.5 7.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 10.5v5.5M12 7.5h.01"/>',
+  video: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  moon: '<path d="M20.5 15.7A8.5 8.5 0 0 1 8.3 3.5 8.5 8.5 0 1 0 20.5 15.7z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 };
-const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query, state.type) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
-function moveViewer(step) { const items = viewerItems(); const i = items.findIndex(item => item.id === state.selected); if (i >= 0 && items.length > 1) { const focused = document.activeElement?.dataset.step; const favoriteFocused = document.activeElement?.dataset.favorite !== undefined; state.selected = items[(i + step + items.length) % items.length].id; render(); if (focused) document.querySelector(`[data-step="${focused}"]`)?.focus(); else if (favoriteFocused) document.querySelector('[data-favorite]')?.focus(); } }
-function closeViewer() { const opener = state.viewerOpener; state.selected = null; state.viewerOpener = null; render(); const card = document.querySelector(`[data-open="${opener}"]`); const activeNav = [...document.querySelectorAll('.nav-item.active')].find(el => el.getClientRects().length); (card || activeNav)?.focus(); }
-function focusHeading() { const heading = document.querySelector('#main h1'); if (heading) { heading.tabIndex = -1; heading.focus(); } }
-function navigate(page) { state.page = page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null; render(); window.scrollTo(0, 0); if (page === 'search') document.querySelector('#main-search')?.focus(); else focusHeading(); }
+const icon = (name, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
+const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const monthOf = date => new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(new Date(`${date}T12:00:00Z`));
+const viewerItems = () => state.page === 'all' ? findMedia(state.query, state.type, state.album) : state.page === 'search' ? findMedia(state.query) : state.page === 'favorites' ? media.filter(item => state.favorites.has(item.id)) : media;
 
 function navButton(page, label, symbol) {
-  return `<button class="nav-item ${state.page === page ? 'active' : ''}" data-page="${page}" ${state.page === page ? 'aria-current="page"' : ''}>${icon(symbol)}<span>${label}</span></button>`;
+  return `<button class="nav-item ${state.page === page && !state.album ? 'active' : ''}" data-page="${page}" ${state.page === page && !state.album ? 'aria-current="page"' : ''}>${icon(symbol, 21)}<span>${label}</span></button>`;
 }
 
-function mediaCard(item, extra = '') {
-  return `<button class="media-card ${extra}" data-open="${item.id}" aria-label="Open ${escapeHtml(item.title)}, ${escapeHtml(item.type)} from ${escapeHtml(item.place)}">
-    <img src="${photo(item)}" alt="Sample photograph: ${escapeHtml(item.title)}" loading="lazy" />
-    ${item.type === 'video' ? `<span class="video-indicator">${icon('video', 16)} Sample video</span>` : ''}
-    <span class="card-caption"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.place)}</small></span>
+function tile(item) {
+  return `<button class="media-card" data-open="${item.id}" aria-label="Open ${escapeHtml(item.title)}, ${escapeHtml(item.type)} from ${escapeHtml(item.place)}">
+    <img src="${photo(item, 700)}" alt="" loading="lazy" />
+    ${item.type === 'video' ? `<span class="video-indicator" aria-hidden="true">${icon('video', 16)}</span>` : ''}
   </button>`;
 }
 
-function grid(items) {
-  if (!items.length) {
-    if (state.album && !state.query && state.type !== 'all' && findMedia('', 'all', state.album).length) return `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>No sample ${state.type === 'video' ? 'videos' : 'photos'} in this album</h2><p>Other media may still be here.</p><button class="text-action" data-type="all">Show all types ${icon('arrow', 17)}</button></div>`;
-    if (state.album && !state.query) return `<div class="empty"><span class="empty-icon">${icon('album', 26)}</span><h2>This sample album is empty</h2><p>Album editing and adding media are part of a later phase. Explore the other sample collections for now.</p><button class="text-action" data-page="albums">Browse albums ${icon('arrow', 17)}</button></div>`;
-    return `<div class="empty"><span class="empty-icon">${icon('search', 26)}</span><h2>No sample matches</h2><p>Try a place, date, or a simpler description. This prototype searches fixture labels only.</p><button class="text-action" data-clear>Clear search ${icon('arrow', 17)}</button></div>`;
+function empty(message, detail, action, actionAttrs = 'data-page="all"') {
+  return `<div class="empty"><span class="empty-symbol">${icon('photos', 29)}</span><h2>${message}</h2><p>${detail}</p><button class="text-action" ${actionAttrs}>${action}</button></div>`;
+}
+
+function mediaGrid(items) {
+  return items.length ? `<div class="media-grid">${items.map(tile).join('')}</div>` : empty('No matching moments', 'Try a different search or filter. This is a sample library.', 'Clear filters', 'data-clear');
+}
+
+function mediaGroups(items) {
+  if (state.grouping === 'all' || state.album || state.page !== 'all') {
+    return `<section class="library-section"><div class="section-heading"><h2>${state.album ? 'Photos and videos' : '2026'}</h2><span>${items.length} ${items.length === 1 ? 'item' : 'items'}</span></div>${mediaGrid(items)}</section>`;
   }
-  return `<div class="media-grid">${items.map(item => mediaCard(item)).join('')}</div>`;
+  const groups = new Map();
+  for (const item of items) {
+    const month = monthOf(item.date);
+    if (!groups.has(month)) groups.set(month, []);
+    groups.get(month).push(item);
+  }
+  return [...groups].map(([month, group]) => `<section class="library-section"><div class="section-heading"><h2>${month}</h2><span>${group.length} ${group.length === 1 ? 'item' : 'items'}</span></div>${mediaGrid(group)}</section>`).join('');
 }
 
-function home() {
-  const feature = media[0];
-  return `<section class="intro"><div><span class="eyebrow">YOUR SPACE · SAMPLE LIBRARY</span><h1>Your moments.<br /><em>All in one place.</em></h1><p>A clear space for the photos and videos you want to keep close.</p></div><button class="intro-link" data-page="all">Explore all media ${icon('arrow', 18)}</button></section>
-    <div class="feature-layout"><button class="feature" data-open="${feature.id}" aria-label="Open sample moment ${escapeHtml(feature.title)}"><img src="${photo(feature, 1600)}" alt="Sample photograph: a quiet street" /><span class="feature-label"><small>RECENT MOMENT</small><strong>${escapeHtml(feature.title)}</strong><span>${escapeHtml(feature.place)} · ${formatDate(feature.date)}</span></span></button>
-    <div class="feature-side"><div class="section-kicker">YOUR COLLECTIONS</div><h2>Albums,<br />in focus.</h2><p>Find the moments you grouped together, ready whenever you are.</p><button class="outline-action" data-page="albums">Browse albums ${icon('arrow', 17)}</button><div class="feature-count"><strong>04</strong><span>sample collections</span></div></div></div>
-    <section class="section"><div class="section-head"><div><span class="eyebrow">THE LATEST</span><h2>Recent moments</h2></div><button class="text-action" data-page="all">View all ${icon('arrow', 17)}</button></div>${grid(media.slice(1, 5))}</section>`;
-}
-
-function allMedia() {
-  const items = findMedia(state.query, state.type, state.album);
-  return `<section class="page-heading"><div><span class="eyebrow">EVERYTHING IN ONE PLACE</span><h1>${state.album ? escapeHtml(state.album) : 'All media'}</h1><p>${items.length} sample ${items.length === 1 ? 'item' : 'items'} · Fixture labels only</p></div>${state.album ? '<button class="outline-action" data-page="albums">All albums</button>' : ''}</section>
-    <div class="filter-row" role="group" aria-label="Media type filters"><button class="filter ${state.type === 'all' ? 'selected' : ''}" aria-pressed="${state.type === 'all'}" data-type="all">All</button><button class="filter ${state.type === 'photo' ? 'selected' : ''}" aria-pressed="${state.type === 'photo'}" data-type="photo">Photos</button><button class="filter ${state.type === 'video' ? 'selected' : ''}" aria-pressed="${state.type === 'video'}" data-type="video">Videos</button></div>
-    ${grid(items)}`;
+function library() {
+  const items = findMedia('', state.type, state.album);
+  const title = state.album || 'Photos';
+  return `<header class="page-heading"><div>${state.album ? '<button class="back-link" data-page="albums">' + icon('back', 17) + ' Albums</button>' : '<span class="eyebrow">SAMPLE LIBRARY</span>'}<h1>${escapeHtml(title)}</h1><p>${items.length} sample ${items.length === 1 ? 'item' : 'items'} · Your real library is not connected</p></div><button class="header-search" data-page="search" aria-label="Search photos">${icon('search', 22)}</button></header>
+    <div class="library-toolbar"><div class="filter-row" role="group" aria-label="Media type filters">${['all', 'photo', 'video'].map(type => `<button class="filter ${state.type === type ? 'selected' : ''}" data-type="${type}" aria-pressed="${state.type === type}">${type === 'all' ? 'All' : type === 'photo' ? 'Photos' : 'Videos'}</button>`).join('')}</div>${state.album ? '' : `<div class="view-row" role="group" aria-label="Group photos"><button class="view-option ${state.grouping === 'all' ? 'selected' : ''}" data-group="all" aria-pressed="${state.grouping === 'all'}">All</button><button class="view-option ${state.grouping === 'months' ? 'selected' : ''}" data-group="months" aria-pressed="${state.grouping === 'months'}">Months</button></div>`}</div>
+    ${items.length ? mediaGroups(items) : state.album && state.type !== 'all' && findMedia('', 'all', state.album).length ? empty(`No ${state.type === 'video' ? 'videos' : 'photos'} here`, 'This sample album has other media.', 'Show all media', 'data-type="all"') : state.album ? empty('This sample album is empty', 'Album editing and real imports come later.', 'Browse albums', 'data-page="albums"') : mediaGrid(items)}`;
 }
 
 function albums() {
-  return `<section class="page-heading"><div><span class="eyebrow">CURATED BY YOU</span><h1>Albums</h1><p>Small collections for the moments you return to.</p></div><button class="outline-action" data-create>${icon('plus', 17)} New sample album</button></section>
-    <div class="album-grid">${state.albums.map(name => { const items = media.filter(item => item.album === name); const cover = items[0]; return `<button class="album-card" data-album="${escapeHtml(name)}"><span class="album-cover ${cover ? '' : 'album-cover-empty'}">${cover ? `<img src="${photo(cover)}" alt="" loading="lazy" />` : `${icon('album', 30)}<span>Empty sample album</span>`}</span><span class="album-title">${escapeHtml(name)} ${icon('arrow', 18)}</span><span class="album-meta">${items.length} sample ${items.length === 1 ? 'item' : 'items'}</span></button>`; }).join('')}</div>`;
-}
-
-function searchPage() {
-  return `<section class="page-heading"><div><span class="eyebrow">FIND YOUR WAY BACK</span><h1>Search</h1><p>Begin with a place, a date, or what you remember.</p></div></section>
-    <div class="search-large">${icon('search', 24)}<input id="main-search" type="search" placeholder="Try ‘Kyoto’, ‘mountains’, or ‘2026’" value="${escapeHtml(state.query)}" aria-label="Search sample media" autocomplete="off" /></div>
-    <div class="index-note"><span class="note-dot"></span><div><strong>Sample indexing state: ${state.index === 'partial' ? 'incomplete' : 'complete'}</strong><p>${state.index === 'partial' ? 'In a real library, results may be partial while trusted devices build and sync their indexes.' : 'This still searches only fixture labels. Semantic, face, and OCR search are not connected.'}</p></div><button class="note-toggle" data-index aria-pressed="${state.index === 'complete'}">Indexing complete</button></div>
-    <div id="search-results" aria-live="polite">${searchResults()}</div>`;
+  return `<header class="page-heading"><div><span class="eyebrow">SAMPLE COLLECTIONS</span><h1>Albums</h1><p>Moments grouped for an easier way back.</p></div></header><div class="album-grid">${state.albums.map(name => {
+    const items = media.filter(item => item.album === name);
+    const cover = items[0];
+    return `<button class="album-card" data-album="${escapeHtml(name)}"><span class="album-cover ${cover ? '' : 'album-cover-empty'}">${cover ? `<img src="${photo(cover, 900)}" alt="" loading="lazy" />` : icon('albums', 38)}</span><span class="album-name">${escapeHtml(name)}</span><span class="album-count">${items.length} sample ${items.length === 1 ? 'item' : 'items'}</span></button>`;
+  }).join('')}</div>`;
 }
 
 function searchResults() {
-  if (state.query) { const items = findMedia(state.query, state.type); return `<div class="section-head results-head"><div><span class="eyebrow">SAMPLE RESULTS</span><h2>${items.length} found</h2></div></div>${grid(items)}`; }
-  return `<div class="suggestions"><span class="eyebrow">SOMEWHERE TO START</span><div>${['Kyoto', 'Mountains', 'Coast', '2026'].map(t => `<button data-suggest="${t}">${t} ${icon('arrow', 15)}</button>`).join('')}</div></div>`;
+  if (!state.query) return `<div class="suggestions"><h2>Start with a place or moment</h2><div>${['Kyoto', 'Mountains', 'Coast', '2026'].map(term => `<button data-suggest="${term}">${term}</button>`).join('')}</div></div>`;
+  const items = findMedia(state.query);
+  return `<section class="library-section"><div class="section-heading"><h2>Results</h2><span>${items.length} found</span></div>${mediaGrid(items)}</section>`;
+}
+
+function searchPage() {
+  return `<header class="page-heading"><div><span class="eyebrow">SAMPLE SEARCH</span><h1>Search</h1><p>Find a place, date, or album in this preview.</p></div></header><label class="search-large">${icon('search', 23)}<input id="main-search" type="search" placeholder="Try Kyoto, mountains, or 2026" value="${escapeHtml(state.query)}" aria-label="Search sample media" autocomplete="off" /></label><p class="index-note">Only these sample photos are searchable. Your private library is not connected.</p><div id="search-results" aria-live="polite">${searchResults()}</div>`;
 }
 
 function favorites() {
   const items = media.filter(item => state.favorites.has(item.id));
-  return `<section class="page-heading"><div><span class="eyebrow">KEEP CLOSE</span><h1>Favorites</h1><p>Sample changes reset when the page reloads.</p></div></section>${items.length ? grid(items) : `<div class="empty"><span class="empty-icon">${icon('heart', 26)}</span><h2>Nothing saved yet</h2><p>Open a sample moment and choose Favorite. Your choice resets on reload.</p><button class="text-action" data-page="all">Browse all media ${icon('arrow', 17)}</button></div>`}`;
+  return `<header class="page-heading"><div><span class="eyebrow">SAMPLE COLLECTION</span><h1>Favorites</h1><p>${items.length ? `${items.length} saved in this session` : 'Keep the moments you want to find again.'} · Resets on reload</p></div></header>${items.length ? `<section class="library-section">${mediaGrid(items)}</section>` : empty('No favorites yet', 'Open a sample photo and tap the heart to save it for this session.', 'Browse photos')}`;
 }
 
 function viewer() {
-  const item = media.find(x => x.id === state.selected);
+  const item = media.find(m => m.id === state.selected);
   if (!item) return '';
-  const items = viewerItems(); const idx = items.findIndex(x => x.id === item.id);
-  return `<div class="viewer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer"><div class="viewer-top"><button class="icon-button" data-close aria-label="Close viewer">${icon('close', 23)}</button><span>Sample media · ${idx + 1} of ${items.length}</span><button class="viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 19)} ${state.favorites.has(item.id) ? 'Favorited' : 'Favorite'}</button></div><div class="viewer-body"><button class="viewer-arrow previous" data-step="-1" aria-label="Previous item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button><img src="${photo(item, 1800)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /><button class="viewer-arrow" data-step="1" aria-label="Next item" ${items.length < 2 ? 'disabled' : ''}>${icon('chevron', 26)}</button></div><div class="viewer-bottom"><div><span class="eyebrow">${escapeHtml(item.type.toUpperCase())} · SAMPLE</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.place)} · ${formatDate(item.date)}</p></div><span class="availability">${item.type === 'video' ? 'Sample poster · video playback not connected' : state.offline ? 'Sample preview · simulated offline · original not connected' : 'Sample preview · original not connected'}</span></div></div>`;
+  const items = viewerItems();
+  const index = items.findIndex(m => m.id === item.id);
+  const chrome = state.viewerChrome;
+  return `<div class="viewer ${chrome ? '' : 'chrome-hidden'}" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.title)}" id="viewer">
+    <div class="viewer-top" ${chrome ? '' : 'inert aria-hidden="true"'}><button class="viewer-icon" data-close aria-label="Back to photos">${icon('back', 23)}</button><span class="viewer-counter">${index + 1} of ${items.length}</span><button class="viewer-icon" data-info aria-label="Photo information" aria-pressed="${state.viewerInfo}">${icon('info', 21)}</button></div>
+    <div class="viewer-stage"><button class="viewer-step previous" data-step="-1" aria-label="Previous photo" ${!chrome ? 'inert aria-hidden="true"' : ''} ${items.length < 2 ? 'disabled' : ''}>${icon('back', 25)}</button><button class="viewer-image" data-chrome aria-label="${chrome ? 'Hide' : 'Show'} photo controls"><img src="${photo(item, 2000)}" alt="Sample ${item.type === 'video' ? 'video poster' : 'photograph'}: ${escapeHtml(item.title)}" /></button><button class="viewer-step next" data-step="1" aria-label="Next photo" ${!chrome ? 'inert aria-hidden="true"' : ''} ${items.length < 2 ? 'disabled' : ''}>${icon('next', 25)}</button></div>
+    <div class="viewer-bottom" ${chrome ? '' : 'inert aria-hidden="true"'}><div class="viewer-details"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.place)} · ${formatDate(item.date)}</span></div><button class="viewer-icon viewer-favorite ${state.favorites.has(item.id) ? 'is-favorite' : ''}" data-favorite="${item.id}" aria-label="${state.favorites.has(item.id) ? 'Remove from favorites' : 'Add to favorites'}" aria-pressed="${state.favorites.has(item.id)}">${icon('heart', 22)}</button></div><div class="viewer-filmstrip" aria-label="Photo thumbnails">${items.map(m => `<button data-jump="${m.id}" aria-label="View ${escapeHtml(m.title)}" ${m.id === item.id ? 'aria-current="true"' : ''}><img src="${photo(m, 150)}" alt="" /></button>`).join('')}</div></div>
+    ${state.viewerInfo && chrome ? `<aside class="viewer-info" aria-label="Photo details"><h2>Details</h2><dl><dt>Name</dt><dd>${escapeHtml(item.title)}</dd><dt>Date</dt><dd>${formatDate(item.date)}</dd><dt>Location</dt><dd>${escapeHtml(item.place)}</dd><dt>Type</dt><dd>${item.type === 'video' ? 'Sample video poster' : 'Sample photo'}</dd></dl><p>Preview only · original not connected</p></aside>` : ''}
+  </div>`;
 }
 
 function render() {
   document.body.classList.toggle('viewer-open', Boolean(state.selected));
-  app.innerHTML = `<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark">N</span><span class="brand-name">Nexo <small>Gallery</small></span></div><div class="nav-group"><span class="nav-label">LIBRARY</span>${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</div><div class="sidebar-bottom"><div class="sidebar-caption">The moments you keep, organized.</div><div class="sample-indicator"><span></span> Prototype · sample media</div></div></aside>
-    <div class="main-column"><header class="topbar"><button class="mobile-brand" data-page="home" aria-label="Nexo Gallery home">N</button><button class="top-search" data-page="search">${icon('search', 19)} <span>Search your gallery</span><kbd>⌘ K</kbd></button><div class="top-actions"><button class="theme-control" data-theme aria-label="Dark theme" aria-pressed="${state.theme === 'dark'}" title="Toggle dark theme">${icon(state.theme === 'dark' ? 'sun' : 'moon', 17)}<span>Dark theme</span></button><button class="availability-control" data-offline aria-pressed="${state.offline}" title="Toggle simulated home server state"><span class="status-dot ${state.offline ? 'offline' : ''}"></span>${state.offline ? 'Simulated offline' : 'Simulated online'}</button><span class="avatar" aria-label="Personal space">A</span></div></header><main id="main">${state.page === 'home' ? home() : state.page === 'all' ? allMedia() : state.page === 'albums' ? albums() : state.page === 'favorites' ? favorites() : searchPage()}</main><footer class="footer">NEXO GALLERY <span>Prototype · all content and status are sample data</span></footer></div>
-    <nav class="mobile-nav" aria-label="Main navigation">${navButton('home', 'Home', 'home')}${navButton('all', 'All media', 'grid')}${navButton('search', 'Search', 'search')}${navButton('albums', 'Albums', 'album')}${navButton('favorites', 'Favorites', 'heart')}</nav></div>${state.selected ? viewer() : ''}`;
-  if (state.selected) { document.querySelector('.layout').inert = true; document.querySelector('[data-close]')?.focus(); }
+  app.innerHTML = `<div class="layout"><aside class="sidebar"><div class="brand"><span class="brand-mark">N</span><span>Nexo <small>Gallery</small></span></div><nav aria-label="Main navigation">${navButton('all', 'Photos', 'photos')}${navButton('albums', 'Albums', 'albums')}${navButton('favorites', 'Favorites', 'heart')}${navButton('search', 'Search', 'search')}</nav><div class="sidebar-bottom"><span class="demo-dot"></span>Sample library · no personal media</div></aside><div class="main-column"><header class="topbar"><div class="topbar-brand">Nexo <span>Gallery</span></div><div class="topbar-actions"><button class="theme-control" data-theme aria-label="${state.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}" title="Toggle theme">${icon(state.theme === 'dark' ? 'sun' : 'moon', 19)}</button><span class="preview-label">Preview</span></div></header><main id="main">${state.page === 'all' ? library() : state.page === 'albums' ? albums() : state.page === 'favorites' ? favorites() : searchPage()}</main></div><nav class="mobile-nav" aria-label="Mobile navigation">${navButton('all', 'Photos', 'photos')}${navButton('albums', 'Albums', 'albums')}${navButton('favorites', 'Favorites', 'heart')}${navButton('search', 'Search', 'search')}</nav></div>${state.selected ? viewer() : ''}`;
+  if (state.selected) {
+    document.querySelector('.layout').inert = true;
+    document.querySelector('[data-close]')?.focus();
+    const activeThumb = document.querySelector('.viewer-filmstrip [aria-current]');
+    activeThumb?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+}
+
+function focusHeading() {
+  const heading = document.querySelector('#main h1');
+  if (heading) { heading.tabIndex = -1; heading.focus(); }
+}
+function navigate(page) {
+  state.page = page; state.album = null; state.query = ''; state.type = 'all'; state.selected = null;
+  render(); window.scrollTo(0, 0);
+  if (page === 'search') document.querySelector('#main-search')?.focus(); else focusHeading();
+}
+function closeViewer() {
+  const opener = state.viewerOpener;
+  state.selected = null; state.viewerOpener = null; state.viewerInfo = false; state.viewerChrome = true;
+  render();
+  (document.querySelector(`[data-open="${opener}"]`) || document.querySelector('.nav-item.active'))?.focus();
+}
+function moveViewer(step) {
+  const items = viewerItems();
+  const index = items.findIndex(item => item.id === state.selected);
+  if (index < 0 || items.length < 2) return;
+  const focusStep = document.activeElement?.dataset.step;
+  state.selected = items[(index + step + items.length) % items.length].id;
+  state.viewerInfo = false; render();
+  (focusStep ? document.querySelector(`[data-step="${focusStep}"]`) : document.querySelector('.viewer-image'))?.focus();
 }
 
 app.addEventListener('click', event => {
   const target = event.target.closest('button');
   if (!target) return;
-  if (target.dataset.page) { navigate(target.dataset.page); }
-  else if (target.dataset.open) { state.selected = target.dataset.open; state.viewerOpener = target.dataset.open; render(); }
-  else if (target.dataset.close !== undefined) { closeViewer(); }
-  else if (target.dataset.step) { moveViewer(Number(target.dataset.step)); }
-  else if (target.dataset.favorite) { const wasFavorite = state.favorites.has(target.dataset.favorite); wasFavorite ? state.favorites.delete(target.dataset.favorite) : state.favorites.add(target.dataset.favorite); if (state.page === 'favorites' && wasFavorite) closeViewer(); else { render(); document.querySelector('[data-favorite]')?.focus(); } }
+  if (target.dataset.page) navigate(target.dataset.page);
+  else if (target.dataset.open) { state.selected = target.dataset.open; state.viewerOpener = target.dataset.open; state.viewerChrome = true; state.viewerInfo = false; render(); }
+  else if (target.dataset.close !== undefined) closeViewer();
+  else if (target.dataset.step) moveViewer(Number(target.dataset.step));
+  else if (target.dataset.jump) { state.selected = target.dataset.jump; state.viewerInfo = false; render(); document.querySelector(`[data-jump="${state.selected}"]`)?.focus(); }
+  else if (target.dataset.chrome !== undefined) { state.viewerChrome = !state.viewerChrome; if (!state.viewerChrome) state.viewerInfo = false; render(); document.querySelector('.viewer-image')?.focus(); }
+  else if (target.dataset.info !== undefined) { state.viewerInfo = !state.viewerInfo; render(); document.querySelector('[data-info]')?.focus(); }
+  else if (target.dataset.favorite) {
+    const id = target.dataset.favorite; const wasFavorite = state.favorites.has(id);
+    wasFavorite ? state.favorites.delete(id) : state.favorites.add(id);
+    if (state.page === 'favorites' && wasFavorite) closeViewer();
+    else { render(); document.querySelector('[data-favorite]')?.focus(); }
+  }
   else if (target.dataset.type) { state.type = target.dataset.type; render(); document.querySelector(`[data-type="${state.type}"]`)?.focus(); }
-  else if (target.dataset.album) { state.album = target.dataset.album; state.page = 'all'; render(); focusHeading(); }
+  else if (target.dataset.group) { state.grouping = target.dataset.group; render(); document.querySelector(`[data-group="${state.grouping}"]`)?.focus(); }
+  else if (target.dataset.album) { state.album = target.dataset.album; state.page = 'all'; state.type = 'all'; render(); focusHeading(); }
   else if (target.dataset.suggest) { state.query = target.dataset.suggest; render(); document.querySelector('#main-search')?.focus(); }
   else if (target.dataset.clear !== undefined) { state.query = ''; state.type = 'all'; render(); (document.querySelector('#main-search') || document.querySelector('[data-type="all"]'))?.focus(); }
-  else if (target.dataset.offline !== undefined) { state.offline = !state.offline; render(); document.querySelector('[data-offline]')?.focus(); }
-  else if (target.dataset.theme !== undefined) { state.theme = state.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = state.theme; try { localStorage.setItem('nexo-gallery-theme', state.theme); } catch { /* The toggle still works for this page. */ } render(); document.querySelector('button[data-theme]')?.focus(); }
-  else if (target.dataset.index !== undefined) { state.index = state.index === 'partial' ? 'complete' : 'partial'; render(); document.querySelector('[data-index]')?.focus(); }
-  else if (target.dataset.create !== undefined) { const name = prompt('Name a sample album (resets on reload)'); if (name?.trim() && !state.albums.includes(name.trim())) { state.albums.unshift(name.trim()); render(); [...document.querySelectorAll('[data-album]')].find(button => button.dataset.album === name.trim())?.focus(); } }
+  else if (target.dataset.theme !== undefined) { state.theme = state.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = state.theme; try { localStorage.setItem('nexo-gallery-theme', state.theme); } catch {} render(); document.querySelector('[data-theme]')?.focus(); }
 });
 
 app.addEventListener('input', event => {
@@ -137,9 +182,27 @@ app.addEventListener('input', event => {
 document.addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !state.selected) { event.preventDefault(); if (state.page === 'search') document.querySelector('#main-search')?.focus(); else navigate('search'); }
   if (!state.selected) return;
-  if (event.key === 'Escape') { closeViewer(); }
-  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') moveViewer(event.key === 'ArrowRight' ? 1 : -1);
-  if (event.key === 'Tab') { const controls = [...document.querySelectorAll('#viewer button:not(:disabled)')]; const first = controls[0], last = controls.at(-1); if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }
+  if (event.key === 'Escape') { if (state.viewerInfo) { state.viewerInfo = false; render(); document.querySelector('[data-info]')?.focus(); } else closeViewer(); }
+  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); moveViewer(event.key === 'ArrowRight' ? 1 : -1); }
+  if (event.key === 'Tab') {
+    const controls = [...document.querySelectorAll('#viewer button:not(:disabled)')].filter(button => !button.closest('[inert]') && button.getClientRects().length);
+    const first = controls[0], last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
 });
+
+let touchStart = null;
+app.addEventListener('touchstart', event => {
+  if (!event.target.closest('.viewer-image')) return;
+  touchStart = { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+}, { passive: true });
+app.addEventListener('touchend', event => {
+  if (!touchStart || !state.selected) return;
+  const dx = event.changedTouches[0].clientX - touchStart.x;
+  const dy = event.changedTouches[0].clientY - touchStart.y;
+  touchStart = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) { event.preventDefault(); moveViewer(dx < 0 ? 1 : -1); }
+}, { passive: false });
 
 render();
