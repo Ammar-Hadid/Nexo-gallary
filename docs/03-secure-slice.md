@@ -1,6 +1,6 @@
 # Secure Ente vertical slice: evidence record
 
-Status: in progress, 14 November 2026. Use synthetic media only. This record distinguishes source inspection from observed behavior.
+Status: in progress, 15 November 2026. Use synthetic media only. This record distinguishes source inspection from observed behavior.
 
 ## Disposable local environment
 
@@ -9,6 +9,26 @@ The official Ente quickstart generated an isolated Compose project outside this 
 Observed: Museum `/ping` and the web app return HTTP 200; Museum and Postgres report healthy; all five containers run. Before signup, the local `users`, `collections` and `files` tables each contain zero rows. These checks establish service startup only.
 
 The local Ente web signup requires agreement to Ente's terms. The user accepted the terms for this disposable account. The restricted local hardcoded test code is reusable until its configuration is removed; keep it only for the disposable round trip, including fresh-client sign-in, then remove it. A disposable account and synthetic upload have not yet been completed.
+
+### Disposable credential rotation
+
+During local Compose inspection, part of the generated object-store credential appeared in a tool transcript. The local object-store username and password were rotated together in the restricted Compose and Museum configuration, and only the affected containers in `nexo_ente_eval` were recreated. The replacement credential successfully authenticated to the object store; an intentionally invalid credential was denied; Museum `/ping` remained HTTP 200. The exact prior value was discarded before a direct rejection test, so **old-value rejection is unverified**. This incident involved an empty, disposable local stack; neither the prior nor replacement value is recorded here. Before treating this stack as evidence for any production path, replace these disposable credentials again and examine the effective running configuration.
+
+A later read of the local Museum configuration exposed the disposable email verification code in a tool transcript. The code was replaced in the restricted local configuration and code file without printing its replacement; only the isolated Museum container was recreated. Museum `/ping` returned HTTP 200, and a read-only audit still showed zero users, collections, files and object payloads. No further account creation was attempted after this rotation. The new code's acceptance and the old code's rejection were not tested, so live signup remains open. No code value is stored in this repository.
+
+### Repeatable synthetic checks
+
+The UI-independent helper `scripts/ente-fixture.mjs` generates a deterministic 128 × 96 PNG containing the marker `NEXO_SYNTHETIC_MEDIA_MARKER_2026`. It refuses to overwrite an existing file. Use only this synthetic file for the account and media journey:
+
+```sh
+node scripts/ente-fixture.mjs prepare /tmp/nexo-gallery-synthetic.png
+NEXO_ENTE_COMPOSE_FILE=/tmp/nexo-ente-evaluation/my-ente/compose.yaml node scripts/ente-fixture.mjs audit
+node scripts/ente-fixture.mjs verify /path/to/downloaded-synthetic.png
+```
+
+`audit` reads counts and marker presence from the isolated Postgres database and MinIO volume. It exits 2 while no file row exists, 1 if the marker, expected filename or plaintext album name appears in inspected storage fields, and 0 for observations without those leaks. A zero exit is **not** an encryption proof: the read-only audit cannot establish the browser's encryption boundary, signed upload request shape, downloaded plaintext equality, safe retries, or the VPS path. `verify` compares a downloaded file byte for byte with the generated fixture and exits 1 on mismatch. Neither command needs account credentials.
+
+On 15 November, `prepare` produced a valid PNG with SHA-256 `9eeb501e843a9ce466dc9fb94062fbe1c46c50e7901fee00cff26dc7ee310347`; `audit` returned `awaiting_upload`, with zero user, collection, file and object-payload rows. This is a tested empty-stack baseline, not a completed secure round trip.
 
 ## Protocol evidence available from source
 
