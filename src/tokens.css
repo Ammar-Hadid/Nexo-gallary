@@ -11,18 +11,21 @@
   color-scheme: light;
   --font-ui: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-primary: #EF3E4A;
+  --color-primary-text: color-mix(in srgb, var(--color-primary) 80%, black);
+  --color-primary-action: color-mix(in srgb, var(--color-primary) 85%, black);
+  --color-primary-action-ink: #ffffff;
   --color-canvas: #f6f6f7;
   --color-surface: #ffffff;
   --color-surface-raised: #eeeff1;
   --color-ink: #17181c;
   --color-muted: #6e7079;
-  --color-subtle: #999ca4;
+  --color-subtle: #62656e;
   --color-line: #e2e3e7;
   --color-hover: #e9e9ec;
   --color-online: #7e9d9b;
   --color-sidebar: #f9f9fa;
   --color-sidebar-ink: #24252a;
-  --color-sidebar-muted: #747680;
+  --color-sidebar-muted: #686b73;
   --color-sidebar-active: #e8e9ec;
   --color-viewer: #090a0d;
   --color-viewer-ink: #ffffff;
@@ -43,12 +46,13 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --color-primary-text: color-mix(in srgb, var(--color-primary) 70%, white);
   --color-canvas: #101114;
   --color-surface: #18191d;
   --color-surface-raised: #232429;
   --color-ink: #f3f3f5;
   --color-muted: #a4a6af;
-  --color-subtle: #777982;
+  --color-subtle: #a0a2ab;
   --color-line: #2b2c32;
   --color-hover: #292a30;
   --color-online: #91aaa8;

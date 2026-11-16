@@ -16,7 +16,7 @@ The shell opens directly to a dense, date-organized photo library. A narrow navi
 
 ## Tokens and themes
 
-[`src/tokens.css`](../src/tokens.css) is the source of truth for the light and dark palettes, typeface, panel radius, photo spacing, and page gutter. The primary token is `--color-primary: #EF3E4A`. Changing that one token updates the brand mark, active navigation, selection lines, focus outline, and primary actions. Component styles use these variables rather than fixed palette values. Manrope is bundled locally under `assets/fonts` with its Open Font License, so the UI does not need a font request to an external service.
+[`src/tokens.css`](../src/tokens.css) is the source of truth for the light and dark palettes, typeface, panel radius, photo spacing, and page gutter. The primary token is `--color-primary: #EF3E4A`. Derived `--color-primary-text` and `--color-primary-action` darken or lighten the accent where small text needs stronger contrast. Changing the primary token updates the brand mark, active navigation, selection lines, focus outline, and primary actions. Component styles use these variables rather than fixed palette values. Manrope is bundled locally under `assets/fonts` with its Open Font License, so the UI does not need a font request to an external service.
 
 The theme toggle appears in the header. Its label announces the destination theme to assistive technology. The shell starts from the device preference, then remembers an explicit choice in local storage.
 
