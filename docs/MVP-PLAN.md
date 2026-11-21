@@ -1,6 +1,6 @@
 # Nexo Gallery MVP delivery gates
 
-Updated 15 November 2026. The target includes web, iOS, and Android. The existing fixture shell is a test surface; its design has been rejected and is being rebuilt. No personal media is authorized for import until the secure and recovery gates pass.
+Updated 21 November 2026. The target includes web, iOS, and Android. The fixture shell has been redesigned and independently reviewed as a visual test surface. No personal media is authorized for import until the secure and recovery gates pass.
 
 ## Review loop
 
