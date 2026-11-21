@@ -31,7 +31,7 @@ An uncluttered library should still feel effortless when it holds thousands of m
 
 | Area | Current state |
 | --- | --- |
-| Gallery interface | Exploratory, unapproved prototype using sample data |
+| Gallery interface | Independently reviewed photo-first fixture using sample data; no account or real library is connected |
 | AI-powered search | Planned; no semantic, face, or OCR search is connected |
 | Bring-your-own storage | Planned; no cloud account or storage connection is available in this app |
 | Client-side encryption | Architecture selected for evaluation; no encrypted import or storage is connected to this app |
@@ -41,6 +41,6 @@ The planned media foundation is [Ente's self-hosted, end-to-end encrypted stack]
 
 ## Try the interface prototype
 
-The repository currently contains an exploratory interface shell; its design has not been approved. From the repository root, run `python3 -m http.server 4173` and open `http://localhost:4173`. Run `npm test` for the existing fixture and shell checks. There are no package dependencies.
+The repository currently contains an independently reviewed visual fixture, not a functional personal gallery. From the repository root, run `python3 -m http.server 4173` and open `http://localhost:4173`. Run `npm test` for the existing fixture and shell checks. There are no package dependencies.
 
 If local ports are unavailable, run `npm run preview` and open `dist/preview.html` directly. The generated file stays out of Git. Sample photos load from Unsplash and require a network connection. The shell has no authentication, encryption, persistent storage, media import, or Ente/Nexo integration.
