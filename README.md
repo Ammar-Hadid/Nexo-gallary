@@ -12,6 +12,8 @@ Nexo Gallery is being built for people who want one beautiful place for their ph
 - **Find moments naturally.** Search for a place, person, date, or a description such as “the lake between the mountains.” The planned AI search runs on trusted devices so private media and search data do not need to be exposed to a storage provider.
 - **Privacy you can understand.** The target design encrypts originals, previews, and sensitive library data before they leave your device. Storage providers would receive encrypted content, while authorized devices hold the keys needed to view it. Providers may still see operational metadata such as account activity, file sizes, and transfer timing. This privacy model must be verified end to end before launch.
 
+The photo timeline, albums, search results, and video poster are sample data. Favorites last for the current page session; only the theme choice is saved. Fixture photos are loaded from Unsplash and require a network connection. The shell has no authentication, encryption, media import, persistent gallery storage, or integration with Ente/Nexo; do not put personal media into it.
+
 The opportunity is a personal gallery that brings together the convenience people expect from a modern photo app, the ability to choose storage, and private discovery. The secure product behind this vision is the next milestone.
 
 ## Design direction

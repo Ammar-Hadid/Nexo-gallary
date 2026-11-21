@@ -1,0 +1,22 @@
+# Nexo Gallery MVP delivery gates
+
+Updated 21 November 2026. The target includes web, iOS, and Android. The fixture shell has been redesigned and independently reviewed as a visual test surface. No personal media is authorized for import until the secure and recovery gates pass.
+
+## Review loop
+
+Each phase ends at a fixed commit. At least two independent reviewers use separate worktrees: one checks the full user journey, visual quality, accessibility, and platform fit; the other checks correctness, privacy, failure recovery, and maintainability. Reviewers run the application, not just read code. For native phases they use simulator and real device checks where available; for storage phases they inspect actual wire, database, and object bytes with synthetic data. Either reviewer may reject a phase for poor design quality even when tests pass, and may direct the implementation agent to revise it. Fixes are separate commits and receive fresh review. The phase advances only when the integrated result passes.
+
+The visual bar is an OS-level personal photo gallery: media is the focus, navigation feels native to each platform, controls are restrained and reachable, and routine browse/search/view tasks are immediate. [Apple Photos browsing](https://support.apple.com/photos) and [Samsung Gallery](https://www.samsung.com/us/support/answer/ANS10002535/) are interaction references, not assets or layouts to copy.
+
+## Ordered slices
+
+| Phase | Working outcome | Reviewer gate |
+| --- | --- | --- |
+| 2R. Gallery redesign | Rebuild the fixture web journey around a date-organized photo grid, albums, search, favorites, and full-screen viewer. Keep black/gray surfaces, `#EF3E4A`, and editable visual tokens. | Render at narrow phone, tablet, and desktop widths in both themes. Verify image-first viewer, keyboard and touch paths, screen-reader names/focus, reduced motion, and OS-level visual quality. Any decorative page or oversized chrome that displaces media is a defect. |
+| 3. Secure vertical slice | An isolated Ente client imports a synthetic image, stores only encrypted media and sensitive catalog fields, syncs, downloads and decrypts it, and safely handles interruption. Create/add an encrypted album. | Verify actual client, wire, database and object-store bytes, key boundaries, return hash, recovery, and ambiguous acknowledgement behavior. No source-only security claim passes. If Ente cannot support a maintained client path, revisit the foundation decision before integration. |
+| 4. Functional web library | Replace fixtures with an authenticated, client-decrypted library. Import, browse, search available metadata, favorite, create/add albums, and show true upload/index/backup states. | Run a complete user journey with synthetic media on fresh and returning clients, including offline/retry, sign-out, wrong account, duplicate import, keyboard and visual checks. No plaintext media or search content on VPS. |
+| 5. Native iOS and Android | Branded builds from a maintained encrypted client foundation, matching the Nexo journey with platform-native behavior. Support selected-folder backup, share/import, albums, browsing, search, and viewer. | Build and run iOS simulator and Android emulator; then test physical devices for background uploads, permissions, HEIC/HEVC/HDR/Live/Motion media, interruption, restore, battery/network limits, accessibility, and visual quality. Device-only evidence is required for device-only claims. |
+| 6. Operations and recovery | Isolated deployment on the inspected hosts, stable secure storage route, measured status, independent backup, and clean restore. | Prove encrypted object plus consistent database restore on fresh hardware/environment and decrypt on a newly authorized client. Preserve existing workloads and phone originals. Actual scheduled wake and hardware power tests require their separately authorized review. |
+| 7. MVP release | One library works across web, iOS, and Android, with clear offline/partial status and a repeatable recovery procedure. | Independent end-to-end journeys across platforms, privacy review, performance and capacity measurement, accessibility and visual sign-off. No real migration until independent backup and clean restore pass. |
+
+Native source and toolchain preparation may run alongside Phase 3, but a native app is not called integrated until the secure client boundary is proven. Every status report separates running features, tested preparation, and blocked work.
